@@ -107,6 +107,11 @@ public class DagPersistenceService extends AbstractComponent {
                 .constraint(constraint("dag_version").unique(field.token, field.version))
                 .execute();
 
+            context.createUniqueIndex("dag_token_version_latest")
+                .on(table.dag, field.token, field.latest)
+                .where(field.latest.isTrue())
+                .execute();
+
             context.createTableIfNotExists(table.task)
                 .column(field.id)
                 .column(field.version)

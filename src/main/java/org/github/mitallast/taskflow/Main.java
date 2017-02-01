@@ -16,8 +16,6 @@ import org.github.mitallast.taskflow.operation.OperationEnvironment;
 import org.github.mitallast.taskflow.operation.OperationModule;
 import org.github.mitallast.taskflow.persistence.PersistenceModule;
 
-import static org.github.mitallast.taskflow.dag.TaskRun_.dag;
-
 public class Main {
     private static final Object mutex = new Object();
 

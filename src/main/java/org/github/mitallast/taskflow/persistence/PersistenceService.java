@@ -26,13 +26,13 @@ public class PersistenceService extends AbstractLifecycleComponent {
     public PersistenceService(Config config) throws SQLException {
         super(config.getConfig("persistence"), PersistenceService.class);
         url = this.config.getString("url");
-        username = this.config.getString("username");
-        password = this.config.getString("password");
+        username = this.config.getIsNull("username") ? null : this.config.getString("username");
+        password = this.config.getIsNull("password") ? null : this.config.getString("password");
 
         connection = DriverManager.getConnection(
-            url,
-            username,
-            password
+                url,
+                username,
+                password
         );
         dialect = JDBCUtils.dialect(url);
     }
