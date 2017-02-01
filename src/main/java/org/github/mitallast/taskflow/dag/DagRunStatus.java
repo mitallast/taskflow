@@ -4,5 +4,6 @@ public enum DagRunStatus {
     PENDING,
     RUNNING,
     SUCCESS,
-    FAILED
+    FAILED,
+    CANCELED
 }

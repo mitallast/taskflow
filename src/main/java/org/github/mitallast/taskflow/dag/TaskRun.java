@@ -1,6 +1,5 @@
 package org.github.mitallast.taskflow.dag;
 
-import com.google.common.collect.ImmutableList;
 import org.github.mitallast.taskflow.operation.OperationResult;
 import org.joda.time.DateTime;
 
@@ -27,39 +26,39 @@ public class TaskRun {
         this.operationResult = operationResult;
     }
 
-    public long getId() {
+    public long id() {
         return id;
     }
 
-    public long getDagId() {
+    public long dagId() {
         return dagId;
     }
 
-    public long getTaskId() {
+    public long taskId() {
         return taskId;
     }
 
-    public long getDagRunId() {
+    public long dagRunId() {
         return dagRunId;
     }
 
-    public DateTime getCreatedDate() {
+    public DateTime createdDate() {
         return createdDate;
     }
 
-    public DateTime getStartDate() {
+    public DateTime startDate() {
         return startDate;
     }
 
-    public DateTime getFinishDate() {
+    public DateTime finishDate() {
         return finishDate;
     }
 
-    public TaskRunStatus getStatus() {
+    public TaskRunStatus status() {
         return status;
     }
 
-    public OperationResult getOperationResult() {
+    public OperationResult operationResult() {
         return operationResult;
     }
 }

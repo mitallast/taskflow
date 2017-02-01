@@ -39,7 +39,7 @@ public class DummyOperation extends AbstractComponent implements Operation {
             );
         } else {
             return new OperationResult(
-                OperationStatus.FAILURE,
+                OperationStatus.FAILED,
                 "",
                 "Failed dummy operation"
             );

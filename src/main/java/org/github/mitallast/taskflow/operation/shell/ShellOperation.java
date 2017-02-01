@@ -70,13 +70,13 @@ public class ShellOperation extends AbstractComponent implements Operation {
             String stderr = IOUtils.toString(process.getErrorStream(), charset);
 
             return new OperationResult(
-                exitValue == 0 ? OperationStatus.SUCCESS : OperationStatus.FAILURE,
+                exitValue == 0 ? OperationStatus.SUCCESS : OperationStatus.FAILED,
                 stdout,
                 stderr
             );
         } catch (IOException e) {
             return new OperationResult(
-                OperationStatus.FAILURE,
+                OperationStatus.FAILED,
                 "",
                 e.getMessage()
             );

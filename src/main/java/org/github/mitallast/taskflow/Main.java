@@ -7,13 +7,8 @@ import com.typesafe.config.ConfigFactory;
 import org.github.mitallast.taskflow.common.component.ComponentModule;
 import org.github.mitallast.taskflow.common.component.LifecycleService;
 import org.github.mitallast.taskflow.common.component.ModulesBuilder;
-import org.github.mitallast.taskflow.dag.Dag;
-import org.github.mitallast.taskflow.dag.DagModule;
-import org.github.mitallast.taskflow.dag.DagPersistenceService;
-import org.github.mitallast.taskflow.dag.Task;
-import org.github.mitallast.taskflow.operation.OperationCommand;
-import org.github.mitallast.taskflow.operation.OperationEnvironment;
-import org.github.mitallast.taskflow.operation.OperationModule;
+import org.github.mitallast.taskflow.dag.*;
+import org.github.mitallast.taskflow.operation.*;
 import org.github.mitallast.taskflow.persistence.PersistenceModule;
 
 public class Main {
@@ -48,10 +43,28 @@ public class Main {
         System.out.println(dagPersistence.findDag(dag1.id()));
         System.out.println(dagPersistence.findDag(dag1.token()));
 
-        dagPersistence.createDagRun(dag1);
-        dagPersistence.createDagRun(dag2);
-        dagPersistence.createDagRun(dag3);
-        dagPersistence.createDagRun(dag4);
+        DagRun dagRun1 = dagPersistence.createDagRun(dag1);
+        DagRun dagRun2 = dagPersistence.createDagRun(dag2);
+        DagRun dagRun3 = dagPersistence.createDagRun(dag3);
+        DagRun dagRun4 = dagPersistence.createDagRun(dag4);
+
+        dagPersistence.startDagRun(dagRun1.id());
+        dagPersistence.startDagRun(dagRun2.id());
+        dagPersistence.startDagRun(dagRun3.id());
+        dagPersistence.startDagRun(dagRun4.id());
+
+        dagPersistence.startTaskRun(dagRun1.tasks().get(0).id());
+        dagPersistence.startTaskRun(dagRun2.tasks().get(0).id());
+        dagPersistence.startTaskRun(dagRun3.tasks().get(0).id());
+        dagPersistence.startTaskRun(dagRun4.tasks().get(0).id());
+
+        dagPersistence.markTaskRunSuccess(dagRun1.tasks().get(0).id(), new OperationResult(OperationStatus.SUCCESS, "stdout", ""));
+        dagPersistence.markTaskRunFailed(dagRun2.tasks().get(0).id(), new OperationResult(OperationStatus.FAILED, "", "stderr"));
+        dagPersistence.markTaskRunCanceled(dagRun3.tasks().get(0).id());
+
+        dagPersistence.markDagRunSuccess(dagRun1.id());
+        dagPersistence.markDagRunFailed(dagRun2.id());
+        dagPersistence.markDagRunCanceled(dagRun3.id());
 
         lifecycleService.stop();
         lifecycleService.close();

@@ -2,18 +2,19 @@ package org.github.mitallast.taskflow.dag;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.*;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
-import org.github.mitallast.taskflow.operation.OperationCommand;
-import org.github.mitallast.taskflow.operation.OperationEnvironment;
+import org.github.mitallast.taskflow.operation.*;
 import org.github.mitallast.taskflow.persistence.PersistenceService;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.jooq.*;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 
@@ -61,7 +62,7 @@ public class DagPersistenceService extends AbstractComponent {
 
         private final static Field<Timestamp> created_date = field("created_date", SQLDataType.TIMESTAMP.nullable(false));
         private final static Field<Timestamp> start_date = field("start_date", SQLDataType.TIMESTAMP.nullable(true));
-        private final static Field<Timestamp> end_date = field("end_date", SQLDataType.TIMESTAMP.nullable(true));
+        private final static Field<Timestamp> finish_date = field("finish_date", SQLDataType.TIMESTAMP.nullable(true));
 
         private final static Field<String> token = field("token", SQLDataType.VARCHAR(256).nullable(false));
         private final static Field<String> operation = field("operation", SQLDataType.VARCHAR(256).nullable(false));
@@ -131,7 +132,7 @@ public class DagPersistenceService extends AbstractComponent {
                 .column(field.dag_id)
                 .column(field.created_date)
                 .column(field.start_date)
-                .column(field.end_date)
+                .column(field.finish_date)
                 .column(field.status)
                 .constraint(constraint().primaryKey(field.id))
                 .constraint(constraint("dag_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
@@ -144,7 +145,7 @@ public class DagPersistenceService extends AbstractComponent {
                 .column(field.dag_run_id)
                 .column(field.created_date)
                 .column(field.start_date)
-                .column(field.end_date)
+                .column(field.finish_date)
                 .column(field.status)
                 .column(field.operation_status)
                 .column(field.operation_stdout)
@@ -255,14 +256,21 @@ public class DagPersistenceService extends AbstractComponent {
                 .map(record -> dag(record, ImmutableList.of()));
 
             List<Long> ids = dagList.stream().map(Dag::id).collect(Collectors.toList());
-
             Map<Long, ImmutableList.Builder<Task>> taskMap = new HashMap<>();
             context.selectFrom(table.task)
                 .where(field.dag_id.in(ids))
                 .fetch()
                 .forEach(record -> taskMap.computeIfAbsent(record.get(field.dag_id), t -> new ImmutableList.Builder<>()).add(task(record)));
 
-            return ImmutableList.copyOf(dagList);
+            ImmutableList.Builder<Dag> dags = ImmutableList.builder();
+            dagList.forEach(dag -> dags.add(new Dag(
+                dag.id(),
+                dag.version(),
+                dag.token(),
+                taskMap.computeIfAbsent(dag.id(), t -> new ImmutableList.Builder<>()).build()
+            )));
+
+            return dags.build();
         }
     }
 
@@ -389,6 +397,203 @@ public class DagPersistenceService extends AbstractComponent {
         }
     }
 
+    public ImmutableList<DagRun> findDagRuns() {
+        try (DSLContext context = persistence.context()) {
+            Map<Long, ImmutableList.Builder<TaskRun>> taskRunMap = new HashMap<>();
+            context.selectFrom(table.task)
+                .fetch()
+                .forEach(record -> taskRunMap.computeIfAbsent(record.get(field.dag_run_id), t -> new ImmutableList.Builder<>()).add(taskRun(record)));
+
+            ImmutableList.Builder<DagRun> dagRuns = ImmutableList.builder();
+            context.selectFrom(table.dag_run)
+                .fetch()
+                .map(record -> dagRuns.add(dagRun(record, taskRunMap.computeIfAbsent(record.get(field.id), t -> new ImmutableList.Builder<>()).build())));
+
+            return dagRuns.build();
+        }
+    }
+
+    public ImmutableList<DagRun> findPendingDagRuns() {
+        try (DSLContext context = persistence.context()) {
+            List<DagRun> dagRunList = context.selectFrom(table.dag_run)
+                .where(field.status.eq(DagRunStatus.PENDING.name()))
+                .fetch()
+                .map(record -> dagRun(record, ImmutableList.of()));
+
+            List<Long> ids = dagRunList.stream().map(DagRun::id).collect(Collectors.toList());
+            Map<Long, ImmutableList.Builder<TaskRun>> taskRunMap = new HashMap<>();
+            context.selectFrom(table.task)
+                .where(field.dag_run_id.in(ids))
+                .fetch()
+                .forEach(record -> taskRunMap.computeIfAbsent(record.get(field.dag_run_id), t -> new ImmutableList.Builder<>()).add(taskRun(record)));
+
+            ImmutableList.Builder<DagRun> dagRuns = ImmutableList.builder();
+            dagRunList.forEach(dagRun -> dagRuns.add(new DagRun(
+                dagRun.id(),
+                dagRun.dagId(),
+                dagRun.createdDate(),
+                dagRun.startDate(),
+                dagRun.finishDate(),
+                dagRun.status(),
+                taskRunMap.computeIfAbsent(dagRun.id(), t -> new ImmutableList.Builder<>()).build()
+            )));
+
+            return dagRuns.build();
+        }
+    }
+
+    public Optional<DagRun> findDagRun(long id) {
+        try (DSLContext context = persistence.context()) {
+            return context.selectFrom(table.dag_run)
+                .where(field.id.eq(id))
+                .fetchOptional()
+                .map(record -> {
+                    ImmutableList.Builder<TaskRun> tasks = new ImmutableList.Builder<>();
+                    context.selectFrom(table.task_run)
+                        .where(field.dag_id.eq(id))
+                        .fetch()
+                        .forEach(t -> tasks.add(taskRun(t)));
+                    return dagRun(record, tasks.build());
+                });
+        }
+    }
+
+    public boolean startDagRun(long id) {
+        try (DSLContext tr = persistence.context()) {
+            return tr.transactionResult(conf -> {
+                int updated = DSL.using(conf)
+                    .update(table.dag_run)
+                    .set(field.status, DagRunStatus.RUNNING.name())
+                    .set(field.start_date, new Timestamp(System.currentTimeMillis()))
+                    .where(field.id.eq(id).and(field.status.eq(DagRunStatus.PENDING.name())))
+                    .execute();
+
+                logger.info("updated {} rows", updated);
+                return updated == 1;
+            });
+        }
+    }
+
+    public boolean markDagRunSuccess(long id) {
+        try (DSLContext tr = persistence.context()) {
+            return tr.transactionResult(conf -> {
+                int updated = DSL.using(conf)
+                    .update(table.dag_run)
+                    .set(field.status, DagRunStatus.SUCCESS.name())
+                    .set(field.finish_date, new Timestamp(System.currentTimeMillis()))
+                    .where(field.id.eq(id).and(field.status.eq(DagRunStatus.RUNNING.name())))
+                    .execute();
+
+                logger.info("updated {} rows", updated);
+                return updated == 1;
+            });
+        }
+    }
+
+    public boolean markDagRunFailed(long id) {
+        try (DSLContext tr = persistence.context()) {
+            return tr.transactionResult(conf -> {
+                int updated = DSL.using(conf)
+                    .update(table.dag_run)
+                    .set(field.status, DagRunStatus.FAILED.name())
+                    .set(field.finish_date, new Timestamp(System.currentTimeMillis()))
+                    .where(field.id.eq(id).and(field.status.eq(DagRunStatus.RUNNING.name())))
+                    .execute();
+
+                logger.info("updated {} rows", updated);
+                return updated == 1;
+            });
+        }
+    }
+
+    public boolean markDagRunCanceled(long id) {
+        try (DSLContext tr = persistence.context()) {
+            return tr.transactionResult(conf -> {
+                int updated = DSL.using(conf)
+                    .update(table.dag_run)
+                    .set(field.status, DagRunStatus.CANCELED.name())
+                    .set(field.finish_date, new Timestamp(System.currentTimeMillis()))
+                    .where(field.id.eq(id).and(field.status.in(DagRunStatus.PENDING.name(), DagRunStatus.RUNNING.name())))
+                    .execute();
+
+                logger.info("updated {} rows", updated);
+                return updated == 1;
+            });
+        }
+    }
+
+    public boolean startTaskRun(long id) {
+        try (DSLContext tr = persistence.context()) {
+            return tr.transactionResult(conf -> {
+                int updated = DSL.using(conf)
+                    .update(table.task_run)
+                    .set(field.status, TaskRunStatus.RUNNING.name())
+                    .set(field.start_date, new Timestamp(System.currentTimeMillis()))
+                    .where(field.id.eq(id).and(field.status.eq(TaskRunStatus.PENDING.name())))
+                    .execute();
+
+                logger.info("updated {} rows", updated);
+                return updated == 1;
+            });
+        }
+    }
+
+    public boolean markTaskRunSuccess(long id, OperationResult operationResult) {
+        Preconditions.checkNotNull(operationResult);
+        try (DSLContext tr = persistence.context()) {
+            return tr.transactionResult(conf -> {
+                int updated = DSL.using(conf)
+                    .update(table.task_run)
+                    .set(field.status, TaskRunStatus.SUCCESS.name())
+                    .set(field.finish_date, new Timestamp(System.currentTimeMillis()))
+                    .set(field.operation_status, operationResult.status().name())
+                    .set(field.operation_stdout, operationResult.stdout().getBytes(Charset.forName("UTF-8")))
+                    .set(field.operation_stderr, operationResult.stderr().getBytes(Charset.forName("UTF-8")))
+                    .where(field.id.eq(id).and(field.status.eq(TaskRunStatus.RUNNING.name())))
+                    .execute();
+
+                logger.info("updated {} rows", updated);
+                return updated == 1;
+            });
+        }
+    }
+
+    public boolean markTaskRunFailed(long id, OperationResult operationResult) {
+        Preconditions.checkNotNull(operationResult);
+        try (DSLContext tr = persistence.context()) {
+            return tr.transactionResult(conf -> {
+                int updated = DSL.using(conf)
+                    .update(table.task_run)
+                    .set(field.status, TaskRunStatus.FAILED.name())
+                    .set(field.finish_date, new Timestamp(System.currentTimeMillis()))
+                    .set(field.operation_status, operationResult.status().name())
+                    .set(field.operation_stdout, operationResult.stdout().getBytes(Charset.forName("UTF-8")))
+                    .set(field.operation_stderr, operationResult.stderr().getBytes(Charset.forName("UTF-8")))
+                    .where(field.id.eq(id).and(field.status.eq(TaskRunStatus.RUNNING.name())))
+                    .execute();
+
+                logger.info("updated {} rows", updated);
+                return updated == 1;
+            });
+        }
+    }
+
+    public boolean markTaskRunCanceled(long id) {
+        try (DSLContext tr = persistence.context()) {
+            return tr.transactionResult(conf -> {
+                int updated = DSL.using(conf)
+                    .update(table.task_run)
+                    .set(field.status, TaskRunStatus.CANCELED.name())
+                    .set(field.finish_date, new Timestamp(System.currentTimeMillis()))
+                    .where(field.id.eq(id).and(field.status.in(TaskRunStatus.PENDING.name(), TaskRunStatus.RUNNING.name())))
+                    .execute();
+
+                logger.info("updated {} rows", updated);
+                return updated == 1;
+            });
+        }
+    }
+
     private static Dag dag(Record record, ImmutableList<Task> tasks) {
         return new Dag(
             record.get(field.id),
@@ -410,6 +615,53 @@ public class DagPersistenceService extends AbstractComponent {
                 new OperationEnvironment(deserializeMap(record.get(field.operation_environment)))
             )
         );
+    }
+
+    private static TaskRun taskRun(Record record) {
+        return new TaskRun(
+            record.get(field.id),
+            record.get(field.dag_id),
+            record.get(field.task_id),
+            record.get(field.dag_run_id),
+            date(record.get(field.created_date)),
+            date(record.get(field.start_date)),
+            date(record.get(field.finish_date)),
+            TaskRunStatus.valueOf(record.get(field.status)),
+            operationResult(record)
+        );
+    }
+
+    private static DagRun dagRun(Record record, ImmutableList<TaskRun> tasks) {
+        return new DagRun(
+            record.get(field.id),
+            record.get(field.dag_id),
+            date(record.get(field.created_date)),
+            date(record.get(field.start_date)),
+            date(record.get(field.finish_date)),
+            DagRunStatus.valueOf(record.get(field.status)),
+            tasks
+        );
+    }
+
+    private static OperationResult operationResult(Record record) {
+        String status = record.get(field.operation_status);
+        if (status == null) {
+            return null;
+        } else {
+            return new OperationResult(
+                OperationStatus.valueOf(status),
+                new String(record.get(field.operation_stdout), Charset.forName("UTF-8")),
+                new String(record.get(field.operation_stderr), Charset.forName("UTF-8"))
+            );
+        }
+    }
+
+    private static DateTime date(Timestamp timestamp) {
+        if (timestamp == null) {
+            return null;
+        } else {
+            return new DateTime(timestamp.getTime(), DateTimeZone.UTC);
+        }
     }
 
     private static byte[] serialize(ImmutableList<String> tokens) throws IOException {
