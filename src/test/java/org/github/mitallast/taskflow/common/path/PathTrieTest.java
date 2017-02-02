@@ -37,7 +37,7 @@ public class PathTrieTest {
         Assert.assertTrue(params.containsKey("named"));
         Assert.assertNotNull(params.get("named"));
         Assert.assertFalse(params.get("named").length() == 0);
-        Assert.assertEquals("foo", params.get("named").toString());
+        Assert.assertEquals("foo", params.get("named"));
     }
 
     @Test
@@ -51,7 +51,7 @@ public class PathTrieTest {
         Assert.assertTrue(params.containsKey("named"));
         Assert.assertNotNull(params.get("named"));
         Assert.assertFalse(params.get("named").length() == 0);
-        Assert.assertEquals("foo", params.get("named").toString());
+        Assert.assertEquals("foo", params.get("named"));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class PathTrieTest {
         params.clear();
         Assert.assertEquals("3", pathTrie.retrieve("/queue", params));
         Assert.assertFalse(params.isEmpty());
-        Assert.assertEquals("queue", params.get("queue").toString());
+        Assert.assertEquals("queue", params.get("queue"));
     }
 
     @Test
@@ -136,7 +136,7 @@ public class PathTrieTest {
         params.clear();
         Assert.assertEquals("4", pathTrie.retrieve("/queue/_stats", params));
         Assert.assertFalse(params.isEmpty());
-        Assert.assertEquals("queue", params.get("queue").toString());
+        Assert.assertEquals("queue", params.get("queue"));
     }
 
     @Test
@@ -151,7 +151,7 @@ public class PathTrieTest {
         params.clear();
         Assert.assertEquals("5", pathTrie.retrieve("/queue/message", params));
         Assert.assertFalse(params.isEmpty());
-        Assert.assertEquals("queue", params.get("queue").toString());
+        Assert.assertEquals("queue", params.get("queue"));
     }
 
     @Test
@@ -197,7 +197,7 @@ public class PathTrieTest {
         params.clear();
         Assert.assertEquals("6", pathTrie.retrieve("/queue/message/uuid", params));
         Assert.assertFalse(params.isEmpty());
-        Assert.assertEquals("queue", params.get("queue").toString());
-        Assert.assertEquals("uuid", params.get("uuid").toString());
+        Assert.assertEquals("queue", params.get("queue"));
+        Assert.assertEquals("uuid", params.get("uuid"));
     }
 }

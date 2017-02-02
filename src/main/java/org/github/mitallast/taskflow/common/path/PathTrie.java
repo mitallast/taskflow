@@ -82,7 +82,7 @@ public class PathTrie<TrieType> {
             TrieNode<NodeType> node = null;
             if (isNamedWildcard(token)) {
                 for (TrieNode<NodeType> child : childrenNamedWildcard) {
-                    if (key.equals(token)) {
+                    if (child.key.equals(token)) {
                         node = child;
                         break;
                     }
@@ -95,30 +95,20 @@ public class PathTrie<TrieType> {
                     childrenNamedWildcard = tmp;
                 }
             } else {
-                int keyIndex = insertKey(token);
+                int keyIndex = indexKey(token);
                 if (keyIndex >= 0) {
                     node = children[keyIndex];
-                }
-                if (node == null) {
+                } else {
+                    // insert
                     node = new TrieNode<>(token, null);
-                    children[keyIndex] = node;
+                    children = Arrays.copyOf(children, children.length + 1);
+                    children[children.length - 1] = node;
                 }
             }
-
             if (index == (path.length - 1)) {
                 node.value = value;
             } else {
                 node.insert(path, index + 1, value);
-            }
-        }
-
-        private int insertKey(String sequence) {
-            int index = indexKey(sequence);
-            if (index >= 0) {
-                return index;
-            } else {
-                children = Arrays.copyOf(children, children.length + 1);
-                return children.length - 1;
             }
         }
 
@@ -146,30 +136,39 @@ public class PathTrie<TrieType> {
                 return null;
             }
             int end = path.indexOf(separator, start);
-            if (end == -1) {
+            boolean isEnd = end == -1;
+            if (end == len - 1) { // ends with
+                len = len - 1;
+                end = len;
+            } else if (isEnd) {
                 end = len;
             }
-            int keyIndex = indexKey(path, start, end);
-            if (keyIndex >= 0) {
-                TrieNode<NodeType> node = children[keyIndex];
-                final NodeType res;
-                if (end == len) {
-                    res = node.value;
-                } else {
-                    res = node.retrieve(path, end + 1, params);
+            for (TrieNode<NodeType> child : children) {
+                if (isEnd && child.value == null) {
+                    continue;
                 }
-                if (res != null) {
-                    return res;
+                if (!isEnd && child.children.length == 0 && child.childrenNamedWildcard.length == 0) {
+                    continue;
+                }
+                if (child.keyEquals(path, start, end)) {
+                    if (isEnd) {
+                        return child.value;
+                    } else {
+                        NodeType res = child.retrieve(path, end + 1, params);
+                        if (res != null) {
+                            return res;
+                        } else {
+                            break;
+                        }
+                    }
                 }
             }
-
             for (TrieNode<NodeType> child : childrenNamedWildcard) {
-                final NodeType res;
-                if (end == len) {
-                    res = child.value;
-                } else {
-                    res = child.retrieve(path, end + 1, params);
+                if (isEnd && child.value != null) {
+                    put(params, child, path, start, end);
+                    return child.value;
                 }
+                NodeType res = child.retrieve(path, end + 1, params);
                 if (res != null) {
                     put(params, child, path, start, end);
                     return res;
@@ -179,7 +178,7 @@ public class PathTrie<TrieType> {
             return null;
         }
 
-        private void put(Map<String, String> params, TrieNode<NodeType> node, String value, int start, int end) {
+        private static void put(Map<String, String> params, TrieNode node, String value, int start, int end) {
             params.put(node.namedWildcard, QueryStringDecoder.decodeComponent(value.substring(start, end)));
         }
 
