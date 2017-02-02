@@ -27,7 +27,6 @@ public class HttpRequest implements RestRequest {
         this.httpMethod = request.method();
         this.httpHeaders = request.headers();
         this.parseQueryString();
-        determineEffectiveHttpMethod();
     }
 
     @Override
@@ -65,37 +64,26 @@ public class HttpRequest implements RestRequest {
         return httpRequest.uri();
     }
 
-    private void determineEffectiveHttpMethod() {
-        if (!HttpMethod.POST.equals(httpRequest.method())) {
-            return;
-        }
-
-        String methodString = httpHeaders.get(METHOD_TUNNEL);
-
-        if (HttpMethod.PUT.name().equalsIgnoreCase(methodString) || HttpMethod.DELETE.name().equalsIgnoreCase(methodString)) {
-            httpMethod = HttpMethod.valueOf(methodString.toUpperCase());
-        }
-    }
-
     private void parseQueryString() {
-
         String uri = httpRequest.uri();
-        if (!uri.contains("?")) {
+
+        int pathEndPos = uri.indexOf('?');
+
+        if (pathEndPos < 0) {
             paramMap = new HashMap<>();
             queryPath = uri;
-            return;
-        }
-
-        QueryStringDecoder decoder = new QueryStringDecoder(uri);
-        queryPath = decoder.path();
-        Map<String, List<String>> parameters = decoder.parameters();
-        if (parameters.isEmpty()) {
-            paramMap = Collections.emptyMap();
         } else {
-            paramMap = new HashMap<>(parameters.size());
-            parameters.entrySet().stream()
-                .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
-                .forEach(entry -> paramMap.put(entry.getKey(), entry.getValue().get(0)));
+            QueryStringDecoder decoder = new QueryStringDecoder(uri);
+            queryPath = uri.substring(0, pathEndPos);
+            Map<String, List<String>> parameters = decoder.parameters();
+            if (parameters.isEmpty()) {
+                paramMap = Collections.emptyMap();
+            } else {
+                paramMap = new HashMap<>(parameters.size());
+                parameters.entrySet().stream()
+                    .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+                    .forEach(entry -> paramMap.put(entry.getKey(), entry.getValue().get(0)));
+            }
         }
     }
 }
