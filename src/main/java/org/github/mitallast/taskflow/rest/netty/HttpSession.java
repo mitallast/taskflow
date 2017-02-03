@@ -1,5 +1,6 @@
 package org.github.mitallast.taskflow.rest.netty;
 
+import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
@@ -7,10 +8,11 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.github.mitallast.taskflow.rest.RestResponse;
+import org.github.mitallast.taskflow.rest.ResponseBuilder;
 import org.github.mitallast.taskflow.rest.RestSession;
 
 import javax.activation.MimetypesFileTypeMap;
@@ -72,25 +74,6 @@ public class HttpSession implements RestSession {
     }
 
     @Override
-    public void sendResponse(RestResponse response) {
-        ByteBuf buffer = response.getBuffer();
-        DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(
-            HTTP_1_1, response.getResponseStatus(), buffer, false, true);
-
-        int bytes = httpResponse.content().readableBytes();
-        if (bytes >= 0) {
-            httpResponse.headers().set(HttpHeaderNames.CONTENT_LENGTH, bytes);
-        }
-        if (HttpUtil.isKeepAlive(request)) {
-            HttpUtil.setKeepAlive(httpResponse, true);
-        }
-        ChannelFuture writeFuture = ctx.writeAndFlush(httpResponse);
-        if (!HttpUtil.isKeepAlive(request)) {
-            writeFuture.addListener(ChannelFutureListener.CLOSE);
-        }
-    }
-
-    @Override
     public void sendResponse(Throwable response) {
         ByteBuf buffer = ctx.alloc().buffer();
         try (ByteBufOutputStream outputStream = new ByteBufOutputStream(buffer)) {
@@ -141,8 +124,93 @@ public class HttpSession implements RestSession {
         }
     }
 
+    @Override
+    public ResponseBuilder send() {
+        return null;
+    }
+
     private static void setContentTypeHeader(DefaultHttpResponse response, File file) {
         MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
         response.headers().set(HttpHeaderNames.CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
+    }
+
+    private class HttpResponseBuilder implements ResponseBuilder {
+        private HttpResponseStatus status = HttpResponseStatus.OK;
+        private HttpHeaders headers = null;
+
+        @Override
+        public ResponseBuilder status(int status) {
+            this.status = HttpResponseStatus.valueOf(status);
+            return this;
+        }
+
+        @Override
+        public ResponseBuilder status(int status, String reason) {
+            Preconditions.checkNotNull(reason);
+            this.status = new HttpResponseStatus(status, reason);
+            return this;
+        }
+
+        @Override
+        public ResponseBuilder status(HttpResponseStatus status) {
+            Preconditions.checkNotNull(status);
+            this.status = status;
+            return this;
+        }
+
+        @Override
+        public ResponseBuilder header(AsciiString name, AsciiString value) {
+            Preconditions.checkNotNull(name);
+            Preconditions.checkNotNull(value);
+            if (headers == null) {
+                headers = new DefaultHttpHeaders(false);
+            }
+            headers.add(name, value);
+            return null;
+        }
+
+        @Override
+        public void content(String content) {
+            Preconditions.checkNotNull(content);
+            content(Unpooled.copiedBuffer(content, CharsetUtil.UTF_8));
+        }
+
+        @Override
+        public void content(ByteBuf content) {
+            Preconditions.checkNotNull(content);
+            if (headers == null) {
+                headers = EmptyHttpHeaders.INSTANCE;
+            }
+            HttpHeaders tailingHeaders = null;
+            DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+                HTTP_1_1, status,
+                content,
+                headers,
+                new DefaultHttpHeaders(false)
+            );
+            if (HttpUtil.isKeepAlive(request)) {
+                HttpUtil.setKeepAlive(response, true);
+            }
+            ChannelFuture writeFuture = ctx.writeAndFlush(response);
+            if (!HttpUtil.isKeepAlive(request)) {
+                logger.info("add close listener");
+                writeFuture.addListener(ChannelFutureListener.CLOSE);
+            }
+        }
+
+        @Override
+        public void file(URL url) throws IOException {
+
+        }
+
+        @Override
+        public void file(URI uri) throws IOException {
+
+        }
+
+        @Override
+        public void file(File file) throws IOException {
+
+        }
     }
 }

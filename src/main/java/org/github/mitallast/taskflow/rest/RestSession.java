@@ -16,8 +16,6 @@ public interface RestSession {
 
     void sendResponse(HttpResponseStatus status, String response);
 
-    void sendResponse(RestResponse response);
-
     void sendResponse(Throwable response);
 
     void sendFile(URL url) throws IOException;
@@ -25,4 +23,6 @@ public interface RestSession {
     void sendFile(URI uri) throws IOException;
 
     void sendFile(File file) throws IOException;
+
+    ResponseBuilder send();
 }
