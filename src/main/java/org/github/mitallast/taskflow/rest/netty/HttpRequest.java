@@ -1,29 +1,50 @@
 package org.github.mitallast.taskflow.rest.netty;
 
+import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.stream.ChunkedFile;
+import io.netty.util.AsciiString;
+import io.netty.util.CharsetUtil;
+import org.github.mitallast.taskflow.rest.ResponseBuilder;
 import org.github.mitallast.taskflow.rest.RestRequest;
 
+import javax.activation.MimetypesFileTypeMap;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.RandomAccessFile;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
+
 public class HttpRequest implements RestRequest {
 
-    private FullHttpRequest httpRequest;
-    private HttpMethod httpMethod;
+    private final ChannelHandlerContext ctx;
+    private final FullHttpRequest httpRequest;
+    private final HttpMethod httpMethod;
 
     private Map<String, String> paramMap;
     private String queryPath;
 
-    public HttpRequest(FullHttpRequest request) {
+    public HttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) {
+        this.ctx = ctx;
         this.httpRequest = request;
         this.httpMethod = request.method();
-        this.parseQueryString();
+
+        parseQueryString();
     }
 
     @Override
@@ -49,11 +70,6 @@ public class HttpRequest implements RestRequest {
     @Override
     public ByteBuf content() {
         return httpRequest.content();
-    }
-
-    @Override
-    public boolean release() {
-        return httpRequest.release();
     }
 
     @Override
@@ -85,6 +101,141 @@ public class HttpRequest implements RestRequest {
                 parameters.entrySet().stream()
                     .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
                     .forEach(entry -> paramMap.put(entry.getKey(), entry.getValue().get(0)));
+            }
+        }
+    }
+
+    @Override
+    public ResponseBuilder response() {
+        return new HttpResponseBuilder();
+    }
+
+    private class HttpResponseBuilder implements ResponseBuilder {
+        private HttpResponseStatus status = HttpResponseStatus.OK;
+        private final HttpHeaders headers = new DefaultHttpHeaders(false);
+
+        @Override
+        public ResponseBuilder status(int status) {
+            this.status = HttpResponseStatus.valueOf(status);
+            return this;
+        }
+
+        @Override
+        public ResponseBuilder status(int status, String reason) {
+            Preconditions.checkNotNull(reason);
+            this.status = new HttpResponseStatus(status, reason);
+            return this;
+        }
+
+        @Override
+        public ResponseBuilder status(HttpResponseStatus status) {
+            Preconditions.checkNotNull(status);
+            this.status = status;
+            return this;
+        }
+
+        @Override
+        public ResponseBuilder header(AsciiString name, AsciiString value) {
+            Preconditions.checkNotNull(name);
+            Preconditions.checkNotNull(value);
+            headers.add(name, value);
+            return this;
+        }
+
+        @Override
+        public void error(Throwable error) {
+            Preconditions.checkNotNull(error);
+            ByteBuf buffer = ctx.alloc().buffer();
+            try (ByteBufOutputStream outputStream = new ByteBufOutputStream(buffer)) {
+                try (PrintWriter printWriter = new PrintWriter(outputStream)) {
+                    error.printStackTrace(printWriter);
+                }
+            } catch (Exception e) {
+                buffer.release();
+                throw new RuntimeException(e);
+            }
+            header(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+            header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN);
+            data(buffer);
+        }
+
+        @Override
+        public void text(String content) {
+            Preconditions.checkNotNull(content);
+            header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN);
+            data(Unpooled.copiedBuffer(content, CharsetUtil.UTF_8));
+        }
+
+        @Override
+        public void data(ByteBuf content) {
+            Preconditions.checkNotNull(content);
+            DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+                HTTP_1_1, status,
+                content,
+                headers,
+                EmptyHttpHeaders.INSTANCE
+            );
+            HttpUtil.setContentLength(response, content.readableBytes());
+            if (HttpUtil.isKeepAlive(httpRequest)) {
+                HttpUtil.setKeepAlive(response, true);
+            }
+            ChannelFuture writeFuture = ctx.writeAndFlush(response);
+            if (!HttpUtil.isKeepAlive(httpRequest)) {
+                writeFuture.addListener(ChannelFutureListener.CLOSE);
+            }
+        }
+
+        @Override
+        public void file(URL url) throws IOException {
+            try {
+                file(url.toURI());
+            } catch (URISyntaxException e) {
+                throw new IOException(e);
+            }
+        }
+
+        @Override
+        public void file(URI uri) throws IOException {
+            file(new File(uri));
+        }
+
+        @Override
+        public void file(File file) throws IOException {
+            RandomAccessFile raf;
+            raf = new RandomAccessFile(file, "r");
+            long fileLength = raf.length();
+
+            DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK, headers);
+            HttpUtil.setContentLength(response, fileLength);
+
+            MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+            response.headers().set(HttpHeaderNames.CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
+
+            if (HttpUtil.isKeepAlive(httpRequest)) {
+                HttpUtil.setKeepAlive(response, true);
+            }
+            ctx.write(response);
+            ChannelFuture write = ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(raf, 0, fileLength, 8192)));
+            if (!HttpUtil.isKeepAlive(httpRequest)) {
+                write.addListener(ChannelFutureListener.CLOSE);
+            }
+        }
+
+        @Override
+        public void empty() {
+            DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+                HTTP_1_1,
+                status,
+                Unpooled.buffer(0),
+                headers,
+                EmptyHttpHeaders.INSTANCE
+            );
+            if (HttpUtil.isKeepAlive(httpRequest)) {
+                HttpUtil.setKeepAlive(response, true);
+            }
+            ChannelFuture write = ctx.writeAndFlush(response);
+            if (!HttpUtil.isKeepAlive(httpRequest)) {
+                write.addListener(ChannelFutureListener.CLOSE);
             }
         }
     }

@@ -9,7 +9,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.common.path.PathTrie;
 import org.github.mitallast.taskflow.rest.netty.HttpRequest;
-import org.github.mitallast.taskflow.rest.netty.HttpSession;
 
 public class RestController extends AbstractComponent {
 
@@ -26,30 +25,36 @@ public class RestController extends AbstractComponent {
     }
 
     public void dispatchRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest) {
-        HttpSession session = new HttpSession(ctx, httpRequest);
+        final HttpRequest request = new HttpRequest(ctx, httpRequest);
         try {
-            final HttpRequest request = new HttpRequest(httpRequest);
-            executeHandler(request, session);
+            executeHandler(request);
         } catch (Throwable e) {
             try {
-                session.sendResponse(e);
+                request.response()
+                    .status(HttpResponseStatus.INTERNAL_SERVER_ERROR)
+                    .error(e);
             } catch (Throwable ex) {
                 logger.error("error send", e);
                 logger.error("Failed to send failure response for uri [" + httpRequest.uri() + "]", ex);
             }
+        } finally {
+            httpRequest.release();
         }
     }
 
-    private void executeHandler(RestRequest request, RestSession session) {
+    private void executeHandler(RestRequest request) {
         final RestHandler handler = getHandler(request);
         if (handler != null) {
-            handler.handleRequest(request, session);
+            handler.handleRequest(request);
         } else {
-            request.release();
             if (request.getHttpMethod() == HttpMethod.OPTIONS) {
-                session.sendResponse(HttpResponseStatus.OK);
+                request.response()
+                    .status(HttpResponseStatus.OK)
+                    .empty();
             } else {
-                session.sendResponse(HttpResponseStatus.BAD_REQUEST, "No handler found for uri [" + request.getUri() + "] and method [" + request.getHttpMethod() + "]");
+                request.response()
+                    .status(HttpResponseStatus.BAD_REQUEST)
+                    .text("No handler found for uri [" + request.getUri() + "] and method [" + request.getHttpMethod() + "]");
             }
         }
     }

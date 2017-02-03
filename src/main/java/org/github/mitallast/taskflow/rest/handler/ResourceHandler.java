@@ -10,7 +10,6 @@ import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.rest.RestController;
 import org.github.mitallast.taskflow.rest.RestHandler;
 import org.github.mitallast.taskflow.rest.RestRequest;
-import org.github.mitallast.taskflow.rest.RestSession;
 
 import java.io.IOException;
 import java.net.URL;
@@ -43,9 +42,7 @@ public class ResourceHandler extends AbstractComponent implements RestHandler {
     }
 
     @Override
-    public void handleRequest(RestRequest request, RestSession session) {
-        request.release();
-
+    public void handleRequest(RestRequest request) {
         logger.trace("try find {}", request.getQueryPath());
         URL url;
         if (request.getQueryPath().startsWith("/resources/webjars/")) {
@@ -58,14 +55,14 @@ public class ResourceHandler extends AbstractComponent implements RestHandler {
 
         if (url == null) {
             logger.trace("not found");
-            session.sendResponse(HttpResponseStatus.NOT_FOUND);
+            request.response().status(HttpResponseStatus.NOT_FOUND).empty();
         } else {
             try {
                 logger.trace("send {}", url);
-                session.sendFile(url);
+                request.response().file(url);
             } catch (IOException e) {
                 logger.error(e);
-                session.sendResponse(e);
+                request.response().status(HttpResponseStatus.INTERNAL_SERVER_ERROR).error(e);
             }
         }
     }

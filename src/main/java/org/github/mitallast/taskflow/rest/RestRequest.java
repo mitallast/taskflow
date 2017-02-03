@@ -20,5 +20,5 @@ public interface RestRequest {
 
     ByteBuf content();
 
-    boolean release();
+    ResponseBuilder response();
 }

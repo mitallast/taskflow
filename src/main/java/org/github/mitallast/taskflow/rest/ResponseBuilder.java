@@ -19,13 +19,17 @@ public interface ResponseBuilder {
 
     ResponseBuilder header(AsciiString name, AsciiString value);
 
-    void content(String content);
+    void error(Throwable throwable);
 
-    void content(ByteBuf content);
+    void text(String content);
+
+    void data(ByteBuf content);
 
     void file(URL url) throws IOException;
 
     void file(URI uri) throws IOException;
 
     void file(File file) throws IOException;
+
+    void empty();
 }
