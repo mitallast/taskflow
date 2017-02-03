@@ -14,10 +14,8 @@ import java.util.Map;
 
 public class HttpRequest implements RestRequest {
 
-    public static final String METHOD_TUNNEL = "_method";
     private FullHttpRequest httpRequest;
     private HttpMethod httpMethod;
-    private HttpHeaders httpHeaders;
 
     private Map<String, String> paramMap;
     private String queryPath;
@@ -25,7 +23,6 @@ public class HttpRequest implements RestRequest {
     public HttpRequest(FullHttpRequest request) {
         this.httpRequest = request;
         this.httpMethod = request.method();
-        this.httpHeaders = request.headers();
         this.parseQueryString();
     }
 

@@ -4,8 +4,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.stream.ChunkedWriteHandler;
 
 public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
 
@@ -19,9 +19,9 @@ public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
         ChannelPipeline pipeline = ch.pipeline();
-        pipeline.addLast("decoder", new HttpRequestDecoder(4096, 8192, 8192, false));
-        pipeline.addLast("aggregator", new HttpObjectAggregator(1048576));
-        pipeline.addLast("encoder", new HttpResponseEncoder());
+        pipeline.addLast(new HttpServerCodec(4096, 8192, 8192, false));
+        pipeline.addLast(new HttpObjectAggregator(65536));
+        pipeline.addLast(new ChunkedWriteHandler());
         pipeline.addLast("handler", httpHandler);
     }
 }

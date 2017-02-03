@@ -10,6 +10,9 @@ import org.github.mitallast.taskflow.common.component.ModulesBuilder;
 import org.github.mitallast.taskflow.dag.*;
 import org.github.mitallast.taskflow.operation.*;
 import org.github.mitallast.taskflow.persistence.PersistenceModule;
+import org.github.mitallast.taskflow.rest.RestModule;
+
+import java.io.IOException;
 
 public class Main {
     private static final Object mutex = new Object();
@@ -22,6 +25,7 @@ public class Main {
         modules.add(new PersistenceModule());
         modules.add(new OperationModule());
         modules.add(new DagModule());
+        modules.add(new RestModule());
 
         Injector injector = modules.createInjector();
         LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
@@ -66,23 +70,23 @@ public class Main {
         dagPersistence.markDagRunFailed(dagRun2.id());
         dagPersistence.markDagRunCanceled(dagRun3.id());
 
-        lifecycleService.stop();
-        lifecycleService.close();
+//        lifecycleService.stop();
+//        lifecycleService.close();
 //
-//        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-//            try {
-//                synchronized (mutex) {
-//                    mutex.notify();
-//                }
-//                lifecycleService.stop();
-//                lifecycleService.close();
-//            } catch (IOException e) {
-//                e.printStackTrace(System.err);
-//            }
-//        }));
-//
-//        synchronized (mutex) {
-//            mutex.wait();
-//        }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                synchronized (mutex) {
+                    mutex.notify();
+                }
+                lifecycleService.stop();
+                lifecycleService.close();
+            } catch (IOException e) {
+                e.printStackTrace(System.err);
+            }
+        }));
+
+        synchronized (mutex) {
+            mutex.wait();
+        }
     }
 }
