@@ -7,10 +7,13 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
+import org.github.mitallast.taskflow.common.json.JsonService;
 import org.github.mitallast.taskflow.common.path.PathTrie;
 import org.github.mitallast.taskflow.rest.netty.HttpRequest;
 
 public class RestController extends AbstractComponent {
+
+    private final JsonService jsonService;
 
     private final PathTrie<RestHandler> getHandlers = new PathTrie<>();
     private final PathTrie<RestHandler> postHandlers = new PathTrie<>();
@@ -20,12 +23,13 @@ public class RestController extends AbstractComponent {
     private final PathTrie<RestHandler> optionsHandlers = new PathTrie<>();
 
     @Inject
-    public RestController(Config config) {
+    public RestController(Config config, JsonService jsonService) {
         super(config.getConfig("rest"), RestController.class);
+        this.jsonService = jsonService;
     }
 
     public void dispatchRequest(ChannelHandlerContext ctx, FullHttpRequest httpRequest) {
-        final HttpRequest request = new HttpRequest(ctx, httpRequest);
+        final HttpRequest request = new HttpRequest(ctx, httpRequest, jsonService);
         try {
             executeHandler(request);
         } catch (Throwable e) {

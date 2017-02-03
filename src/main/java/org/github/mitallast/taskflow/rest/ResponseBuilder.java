@@ -21,6 +21,8 @@ public interface ResponseBuilder {
 
     void error(Throwable throwable);
 
+    void json(Object json);
+
     void text(String content);
 
     void data(ByteBuf content);

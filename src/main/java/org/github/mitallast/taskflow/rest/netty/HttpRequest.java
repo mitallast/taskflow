@@ -11,6 +11,7 @@ import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedFile;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
+import org.github.mitallast.taskflow.common.json.JsonService;
 import org.github.mitallast.taskflow.rest.ResponseBuilder;
 import org.github.mitallast.taskflow.rest.RestRequest;
 
@@ -35,14 +36,16 @@ public class HttpRequest implements RestRequest {
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest httpRequest;
     private final HttpMethod httpMethod;
+    private final JsonService jsonService;
 
     private Map<String, String> paramMap;
     private String queryPath;
 
-    public HttpRequest(ChannelHandlerContext ctx, FullHttpRequest request) {
+    public HttpRequest(ChannelHandlerContext ctx, FullHttpRequest request, JsonService jsonService) {
         this.ctx = ctx;
         this.httpRequest = request;
         this.httpMethod = request.method();
+        this.jsonService = jsonService;
 
         parseQueryString();
     }
@@ -157,6 +160,15 @@ public class HttpRequest implements RestRequest {
             header(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
             header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN);
             data(buffer);
+        }
+
+        @Override
+        public void json(Object json) {
+            Preconditions.checkNotNull(json);
+            ByteBuf buf = ctx.alloc().buffer();
+            jsonService.serialize(buf, json);
+            header(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON);
+            data(buf);
         }
 
         @Override

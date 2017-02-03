@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory;
 import org.github.mitallast.taskflow.common.component.ComponentModule;
 import org.github.mitallast.taskflow.common.component.LifecycleService;
 import org.github.mitallast.taskflow.common.component.ModulesBuilder;
+import org.github.mitallast.taskflow.common.json.JsonModule;
 import org.github.mitallast.taskflow.dag.*;
 import org.github.mitallast.taskflow.operation.*;
 import org.github.mitallast.taskflow.persistence.PersistenceModule;
@@ -22,6 +23,7 @@ public class Main {
 
         ModulesBuilder modules = new ModulesBuilder();
         modules.add(new ComponentModule(config));
+        modules.add(new JsonModule());
         modules.add(new PersistenceModule());
         modules.add(new OperationModule());
         modules.add(new DagModule());

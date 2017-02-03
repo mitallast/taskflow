@@ -5,19 +5,18 @@ import com.typesafe.config.Config;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import org.github.mitallast.taskflow.common.netty.NettyServer;
-import org.github.mitallast.taskflow.rest.RestController;
 
 public class HttpServer extends NettyServer {
-    private RestController restController;
+    private HttpServerHandler serverHandler;
 
     @Inject
-    public HttpServer(Config config, RestController restController) {
+    public HttpServer(Config config, HttpServerHandler serverHandler) {
         super(config.getConfig("rest"), HttpServer.class);
-        this.restController = restController;
+        this.serverHandler = serverHandler;
     }
 
     @Override
     protected ChannelInitializer<SocketChannel> channelInitializer() {
-        return new HttpServerInitializer(new HttpServerHandler(restController));
+        return new HttpServerInitializer(serverHandler);
     }
 }

@@ -1,5 +1,6 @@
 package org.github.mitallast.taskflow.rest.netty;
 
+import com.google.inject.Inject;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
@@ -24,9 +25,15 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     private final static Logger logger = LogManager.getLogger(HttpServerHandler.class);
     private final RestController restController;
 
+    @Inject
     public HttpServerHandler(RestController restController) {
         super(false);
         this.restController = restController;
+    }
+
+    @Override
+    public boolean isSharable() {
+        return true;
     }
 
     @Override
