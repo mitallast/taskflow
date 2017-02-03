@@ -52,6 +52,11 @@ public class HttpRequest implements RestRequest {
     }
 
     @Override
+    public boolean release() {
+        return httpRequest.release();
+    }
+
+    @Override
     public String getQueryPath() {
         return queryPath;
     }

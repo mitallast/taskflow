@@ -1,6 +1,7 @@
 package org.github.mitallast.taskflow.rest;
 
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +11,8 @@ import java.net.URL;
 public interface RestSession {
 
     ByteBufAllocator alloc();
+
+    void sendResponse(HttpResponseStatus status);
 
     void sendResponse(RestResponse response);
 

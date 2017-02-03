@@ -47,7 +47,7 @@ public class RestController extends AbstractComponent {
         if (handler != null) {
             handler.handleRequest(request, channel);
         } else {
-            request.content().release();
+            request.release();
             if (request.getHttpMethod() == HttpMethod.OPTIONS) {
                 // when we have OPTIONS request, simply send OK by default (with the Access Control Origin header which gets automatically added)
                 channel.sendResponse(new StatusRestResponse(HttpResponseStatus.OK));

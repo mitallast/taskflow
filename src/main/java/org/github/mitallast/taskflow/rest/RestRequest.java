@@ -19,4 +19,6 @@ public interface RestRequest {
     boolean hasParam(String param);
 
     ByteBuf content();
+
+    boolean release();
 }

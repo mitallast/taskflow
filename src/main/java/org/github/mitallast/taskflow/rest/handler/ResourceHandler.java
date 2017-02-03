@@ -45,7 +45,9 @@ public class ResourceHandler extends AbstractComponent implements RestHandler {
 
     @Override
     public void handleRequest(RestRequest request, RestSession session) {
-        logger.info("try find {}", request.getQueryPath());
+        request.release();
+
+        logger.trace("try find {}", request.getQueryPath());
         URL url;
         if (request.getQueryPath().startsWith("/resources/webjars/")) {
             url = getClass().getResource("/META-INF" + request.getQueryPath());
@@ -56,11 +58,11 @@ public class ResourceHandler extends AbstractComponent implements RestHandler {
         }
 
         if (url == null) {
-            logger.info("not found");
+            logger.trace("not found");
             session.sendResponse(new StatusRestResponse(HttpResponseStatus.NOT_FOUND));
         } else {
             try {
-                logger.info("send {}", url);
+                logger.trace("send {}", url);
                 session.sendFile(url);
             } catch (IOException e) {
                 logger.error(e);
