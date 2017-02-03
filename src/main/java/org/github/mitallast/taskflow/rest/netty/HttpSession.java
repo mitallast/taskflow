@@ -3,9 +3,11 @@ package org.github.mitallast.taskflow.rest.netty;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.util.CharsetUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.github.mitallast.taskflow.rest.RestResponse;
@@ -42,6 +44,23 @@ public class HttpSession implements RestSession {
     @Override
     public void sendResponse(HttpResponseStatus status) {
         DefaultFullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, status, false);
+        if (HttpUtil.isKeepAlive(request)) {
+            HttpUtil.setKeepAlive(response, true);
+        }
+        ChannelFuture writeFuture = ctx.writeAndFlush(response);
+        if (!HttpUtil.isKeepAlive(request)) {
+            logger.info("add close listener");
+            writeFuture.addListener(ChannelFutureListener.CLOSE);
+        }
+    }
+
+    @Override
+    public void sendResponse(HttpResponseStatus status, String content) {
+        DefaultFullHttpResponse response = new DefaultFullHttpResponse(
+            HTTP_1_1, status,
+            Unpooled.copiedBuffer(content, CharsetUtil.UTF_8),
+            false
+        );
         if (HttpUtil.isKeepAlive(request)) {
             HttpUtil.setKeepAlive(response, true);
         }

@@ -14,6 +14,8 @@ public interface RestSession {
 
     void sendResponse(HttpResponseStatus status);
 
+    void sendResponse(HttpResponseStatus status, String response);
+
     void sendResponse(RestResponse response);
 
     void sendResponse(Throwable response);

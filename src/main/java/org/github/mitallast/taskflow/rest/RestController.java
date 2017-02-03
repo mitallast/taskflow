@@ -8,8 +8,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.common.path.PathTrie;
-import org.github.mitallast.taskflow.rest.response.StatusRestResponse;
-import org.github.mitallast.taskflow.rest.response.StringRestResponse;
 import org.github.mitallast.taskflow.rest.netty.HttpRequest;
 import org.github.mitallast.taskflow.rest.netty.HttpSession;
 
@@ -42,17 +40,16 @@ public class RestController extends AbstractComponent {
         }
     }
 
-    private void executeHandler(RestRequest request, RestSession channel) {
+    private void executeHandler(RestRequest request, RestSession session) {
         final RestHandler handler = getHandler(request);
         if (handler != null) {
-            handler.handleRequest(request, channel);
+            handler.handleRequest(request, session);
         } else {
             request.release();
             if (request.getHttpMethod() == HttpMethod.OPTIONS) {
-                // when we have OPTIONS request, simply send OK by default (with the Access Control Origin header which gets automatically added)
-                channel.sendResponse(new StatusRestResponse(HttpResponseStatus.OK));
+                session.sendResponse(HttpResponseStatus.OK);
             } else {
-                channel.sendResponse(new StringRestResponse(HttpResponseStatus.BAD_REQUEST, "No handler found for uri [" + request.getUri() + "] and method [" + request.getHttpMethod() + "]"));
+                session.sendResponse(HttpResponseStatus.BAD_REQUEST, "No handler found for uri [" + request.getUri() + "] and method [" + request.getHttpMethod() + "]");
             }
         }
     }

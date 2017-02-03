@@ -11,7 +11,6 @@ import org.github.mitallast.taskflow.rest.RestController;
 import org.github.mitallast.taskflow.rest.RestHandler;
 import org.github.mitallast.taskflow.rest.RestRequest;
 import org.github.mitallast.taskflow.rest.RestSession;
-import org.github.mitallast.taskflow.rest.response.StatusRestResponse;
 
 import java.io.IOException;
 import java.net.URL;
@@ -59,7 +58,7 @@ public class ResourceHandler extends AbstractComponent implements RestHandler {
 
         if (url == null) {
             logger.trace("not found");
-            session.sendResponse(new StatusRestResponse(HttpResponseStatus.NOT_FOUND));
+            session.sendResponse(HttpResponseStatus.NOT_FOUND);
         } else {
             try {
                 logger.trace("send {}", url);
