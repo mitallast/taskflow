@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.operation.OperationEnvironment;
+import org.joda.time.DateTime;
 
 import java.io.IOError;
 import java.io.IOException;
@@ -39,6 +40,8 @@ public class JsonService extends AbstractComponent {
         module.addDeserializer(Config.class, new ConfigDeserializer());
         module.addSerializer(OperationEnvironment.class, new OperationEnvironmentSerializer());
         module.addDeserializer(OperationEnvironment.class, new OperationEnvironmentDeserializer());
+        module.addSerializer(DateTime.class, new DateTimeSerializer());
+        module.addDeserializer(DateTime.class, new DateTimeDeserializer());
 
         mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
@@ -57,7 +60,8 @@ public class JsonService extends AbstractComponent {
     public <T> T deserialize(ByteBuf buf) {
         InputStream input = new ByteBufInputStream(buf);
         try {
-            return mapper.readValue(input, new TypeReference<T>() {});
+            return mapper.readValue(input, new TypeReference<T>() {
+            });
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -114,6 +118,28 @@ public class JsonService extends AbstractComponent {
                 return new OperationEnvironment(builder.build());
             } else {
                 throw new IllegalArgumentException("expected start object");
+            }
+        }
+    }
+
+    private static class DateTimeSerializer extends JsonSerializer<DateTime> {
+        @Override
+        public void serialize(DateTime value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            if (value == null) {
+                gen.writeNull();
+            } else {
+                gen.writeString(value.toString());
+            }
+        }
+    }
+
+    private static class DateTimeDeserializer extends JsonDeserializer<DateTime> {
+        @Override
+        public DateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+            if (p.nextToken() == JsonToken.VALUE_STRING) {
+                return DateTime.parse(p.getText());
+            } else {
+                return null;
             }
         }
     }

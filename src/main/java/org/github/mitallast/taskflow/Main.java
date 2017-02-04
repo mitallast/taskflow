@@ -53,6 +53,7 @@ public class Main {
         DagRun dagRun2 = dagPersistence.createDagRun(dag2);
         DagRun dagRun3 = dagPersistence.createDagRun(dag3);
         DagRun dagRun4 = dagPersistence.createDagRun(dag4);
+        DagRun dagRun5 = dagPersistence.createDagRun(dag4);
 
         dagPersistence.startDagRun(dagRun1.id());
         dagPersistence.startDagRun(dagRun2.id());

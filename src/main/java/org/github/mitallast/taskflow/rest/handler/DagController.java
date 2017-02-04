@@ -53,8 +53,8 @@ public class DagController {
 
         controller.handler(service::findDagRun)
             .param1(controller.param().toLong("id"))
-            .response(controller.response().json())
-            .handle(HttpMethod.GET, "api/dag/run/id/{}");
+            .response(controller.response().optionalJson())
+            .handle(HttpMethod.GET, "api/dag/run/id/{id}");
 
         controller.handler(service::startDagRun)
             .param1(controller.param().toLong("id"))
@@ -62,7 +62,7 @@ public class DagController {
                 if (result) request.response().status(HttpResponseStatus.ACCEPTED).empty();
                 else request.response().status(HttpResponseStatus.METHOD_NOT_ALLOWED).empty();
             })
-            .handle(HttpMethod.POST, "api/dag/run/id/{}/start");
+            .handle(HttpMethod.POST, "api/dag/run/id/{id}/start");
 
         controller.handler(service::markDagRunCanceled)
             .param1(controller.param().toLong("id"))
@@ -70,6 +70,6 @@ public class DagController {
                 if (result) request.response().status(HttpResponseStatus.ACCEPTED).empty();
                 else request.response().status(HttpResponseStatus.METHOD_NOT_ALLOWED).empty();
             })
-            .handle(HttpMethod.POST, "api/dag/run/id/{}/cancel");
+            .handle(HttpMethod.POST, "api/dag/run/id/{id}/cancel");
     }
 }

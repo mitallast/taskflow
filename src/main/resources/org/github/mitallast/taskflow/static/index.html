@@ -9,7 +9,7 @@
     <link href="/static/dashboard.css" rel="stylesheet">
 </head>
 
-<body>
+<body ng-app="dag">
 
 <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container-fluid">
@@ -60,17 +60,175 @@
             </ul>
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-            <h1 class="page-header">Dashboard</h1>
 
+            <h2 class="page-header">DAG</h2>
 
-            <div ng-app="dag" ng-controller="dagCtrl">
+            <table class="table table-stripped" ng-controller="dag-latest-ctrl">
+                <thead>
+                <tr>
+                    <th>id</th>
+                    <th>version</th>
+                    <th>token</th>
+                    <th>tasks</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="dag in latest">
+                    <td>{{ dag.id }}</td>
+                    <td>{{ dag.version }}</td>
+                    <td>{{ dag.token }}</td>
+                    <td>{{ dag.tasks.length }}</td>
+                </tr>
+                </tbody>
+            </table>
 
-                <ul>
-                    <li ng-repeat="x in latest">
-                        {{ x }}
-                    </li>
-                </ul>
+            <h2 class="page-header">DAG state</h2>
 
+            <div ng-controller="dag-id-ctrl">
+                <p>id: {{ dag.id }}</p>
+                <p>version: {{ dag.version }}</p>
+                <p>token: {{ dag.token }}</p>
+                <p>tasks: {{ dag.tasks.length }}</p>
+
+                <table class="table table-stripped">
+                    <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>version</th>
+                        <th>token</th>
+                        <th>depends</th>
+                        <th>operation</th>
+                        <th>config</th>
+                        <th>environment</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="task in dag.tasks">
+                        <td>{{ task.id }}</td>
+                        <td>{{ task.version }}</td>
+                        <td>{{ task.token }}</td>
+                        <td>
+                            <span ng-repeat="token in task.depends">
+                                {{token}}
+                            </span>
+                        </td>
+                        <td>{{ task.operation }}</td>
+                        <td>
+                            <span ng-repeat="(key,value) in task.command.config">
+                                {{key}}:{{value}}
+                            </span>
+                        </td>
+                        <td>
+                            <span ng-repeat="(key,value) in task.command.environment">
+                                {{key}}:{{value}}
+                            </span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 class="page-header">DAG run</h2>
+
+            <table class="table table-stripped" ng-controller="dag-run-ctrl">
+                <thead>
+                <tr>
+                    <th>id</th>
+                    <th>dagId</th>
+                    <th>created</th>
+                    <th>start</th>
+                    <th>finish</th>
+                    <th>status</th>
+                    <th>tasks</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="run in runs">
+                    <td>{{ run.id }}</td>
+                    <td>{{ run.dagId }}</td>
+                    <td>{{ run.createdDate | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td>{{ run.startDate | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td>{{ run.finishDate | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td>{{ run.status }}</td>
+                    <td>{{ run.tasks.length }}</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h2 class="page-header">DAG run pending</h2>
+
+            <table class="table table-stripped" ng-controller="dag-run-pending-ctrl">
+                <thead>
+                <tr>
+                    <th>id</th>
+                    <th>dagId</th>
+                    <th>created</th>
+                    <th>start</th>
+                    <th>finish</th>
+                    <th>status</th>
+                    <th>tasks</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="run in runs">
+                    <td>{{ run.id }}</td>
+                    <td>{{ run.dagId }}</td>
+                    <td>{{ run.createdDate | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td>{{ run.startDate | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td>{{ run.finishDate | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                    <td>{{ run.status }}</td>
+                    <td>{{ run.tasks.length }}</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h2 class="page-header">DAG run state</h2>
+
+            <div ng-controller="dag-run-id-ctrl">
+
+                <p>id: {{ dag_run.id }}</p>
+                <p>dag_id: {{ dag_run.dagId }}</p>
+                <p>created: {{ dag_run.createdDate | date:'yyyy-MM-dd HH:mm:ss' }}</p>
+                <p>start: {{ dag_run.startDate | date:'yyyy-MM-dd HH:mm:ss' }}</p>
+                <p>finish: {{ dag_run.finishDate | date:'yyyy-MM-dd HH:mm:ss' }}</p>
+                <p>status: {{ dag_run.status }}</p>
+                <p>tasks:{{ dag_run.tasks.length }}</p>
+
+                <table class="table table-stripped">
+                    <thead>
+                    <tr>
+                        <th>id</th>
+                        <th>dagId</th>
+                        <th>dagRunId</th>
+                        <th>created</th>
+                        <th>start</th>
+                        <th>finish</th>
+                        <th>status</th>
+                        <th>op status</th>
+                        <th>op stdout</th>
+                        <th>op stderr</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="run in dag_run.tasks">
+                        <td>{{ run.id }}</td>
+                        <td>{{ run.dagId }}</td>
+                        <td>{{ run.dagRunId }}</td>
+                        <td>{{ run.createdDate | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                        <td>{{ run.startDate | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                        <td>{{ run.finishDate | date:'yyyy-MM-dd HH:mm:ss' }}</td>
+                        <td>{{ run.status }}</td>
+                        <td>{{ run.operationResult.status }}</td>
+                        <td>{{ run.operationResult.stdout }}</td>
+                        <td>{{ run.operationResult.stderr }}</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
