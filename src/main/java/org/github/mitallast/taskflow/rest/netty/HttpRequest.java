@@ -16,10 +16,7 @@ import org.github.mitallast.taskflow.rest.ResponseBuilder;
 import org.github.mitallast.taskflow.rest.RestRequest;
 
 import javax.activation.MimetypesFileTypeMap;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -62,7 +59,12 @@ public class HttpRequest implements RestRequest {
 
     @Override
     public String param(String param) {
-        return paramMap.get(param);
+        String val = paramMap.get(param);
+        if (val == null) {
+            throw new IllegalArgumentException("Param {" + param + "} not found");
+        } else {
+            return val;
+        }
     }
 
     @Override
@@ -198,24 +200,37 @@ public class HttpRequest implements RestRequest {
         }
 
         @Override
-        public void file(URL url) throws IOException {
+        public void file(URL url) {
             try {
                 file(url.toURI());
             } catch (URISyntaxException e) {
-                throw new IOException(e);
+                throw new IOError(e);
             }
         }
 
         @Override
-        public void file(URI uri) throws IOException {
+        public void file(URI uri) {
             file(new File(uri));
         }
 
         @Override
-        public void file(File file) throws IOException {
+        public void file(File file) {
             RandomAccessFile raf;
-            raf = new RandomAccessFile(file, "r");
-            long fileLength = raf.length();
+            try {
+                raf = new RandomAccessFile(file, "r");
+            } catch (FileNotFoundException e) {
+                throw new IOError(e);
+            }
+            long fileLength = 0;
+            try {
+                fileLength = raf.length();
+            } catch (IOException e) {
+                try {
+                    raf.close();
+                } catch (IOException ignore) {
+                }
+                throw new IOError(e);
+            }
 
             DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK, headers);
             HttpUtil.setContentLength(response, fileLength);
@@ -227,9 +242,18 @@ public class HttpRequest implements RestRequest {
                 HttpUtil.setKeepAlive(response, true);
             }
             ctx.write(response);
-            ChannelFuture write = ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(raf, 0, fileLength, 8192)));
-            if (!HttpUtil.isKeepAlive(httpRequest)) {
-                write.addListener(ChannelFutureListener.CLOSE);
+            ChannelFuture write = null;
+            try {
+                write = ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(raf, 0, fileLength, 8192)));
+                if (!HttpUtil.isKeepAlive(httpRequest)) {
+                    write.addListener(ChannelFutureListener.CLOSE);
+                }
+            } catch (IOException e) {
+                try {
+                    raf.close();
+                } catch (IOException ignore) {
+                }
+                throw new IOError(e);
             }
         }
 

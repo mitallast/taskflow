@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.google.common.collect.ImmutableMap;
@@ -14,12 +15,14 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.operation.OperationEnvironment;
 
 import java.io.IOError;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 
@@ -46,6 +49,15 @@ public class JsonService extends AbstractComponent {
         OutputStream out = new ByteBufOutputStream(buf);
         try {
             mapper.writeValue(out, json);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public <T> T deserialize(ByteBuf buf) {
+        InputStream input = new ByteBufInputStream(buf);
+        try {
+            return mapper.readValue(input, new TypeReference<T>() {});
         } catch (IOException e) {
             throw new IOError(e);
         }

@@ -27,11 +27,11 @@ public interface ResponseBuilder {
 
     void data(ByteBuf content);
 
-    void file(URL url) throws IOException;
+    void file(URL url);
 
-    void file(URI uri) throws IOException;
+    void file(URI uri);
 
-    void file(File file) throws IOException;
+    void file(File file);
 
     void empty();
 }

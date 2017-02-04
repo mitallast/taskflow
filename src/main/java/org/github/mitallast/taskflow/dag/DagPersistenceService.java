@@ -277,7 +277,7 @@ public class DagPersistenceService extends AbstractComponent {
     /**
      * Find dag by id
      */
-    public Optional<Dag> findDag(long id) {
+    public Optional<Dag> findDagById(long id) {
         try (DSLContext context = persistence.context()) {
             return context.selectFrom(table.dag)
                 .where(field.id.eq(id))
@@ -296,7 +296,7 @@ public class DagPersistenceService extends AbstractComponent {
     /**
      * Find dag by token
      */
-    public Optional<Dag> findDag(String token) {
+    public Optional<Dag> findDagByToken(String token) {
         try (DSLContext context = persistence.context()) {
             return context.selectFrom(table.dag)
                 .where(field.token.eq(token).and(field.latest.isTrue()))

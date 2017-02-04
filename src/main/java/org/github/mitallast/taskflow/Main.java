@@ -46,8 +46,8 @@ public class Main {
         Dag dag4 = dagPersistence.updateDag(dag3);
 
         System.out.println(dagPersistence.findLatestDags());
-        System.out.println(dagPersistence.findDag(dag1.id()));
-        System.out.println(dagPersistence.findDag(dag1.token()));
+        System.out.println(dagPersistence.findDagById(dag1.id()));
+        System.out.println(dagPersistence.findDagByToken(dag1.token()));
 
         DagRun dagRun1 = dagPersistence.createDagRun(dag1);
         DagRun dagRun2 = dagPersistence.createDagRun(dag2);

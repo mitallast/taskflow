@@ -5,16 +5,14 @@ import com.google.common.reflect.ClassPath;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.rest.RestController;
-import org.github.mitallast.taskflow.rest.RestHandler;
-import org.github.mitallast.taskflow.rest.RestRequest;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Optional;
 
-public class ResourceHandler extends AbstractComponent implements RestHandler {
+public class ResourceHandler extends AbstractComponent {
 
     @Inject
     public ResourceHandler(Config config, RestController controller) throws IOException {
@@ -22,13 +20,16 @@ public class ResourceHandler extends AbstractComponent implements RestHandler {
 
         ClassPath classPath = ClassPath.from(getClass().getClassLoader());
         ImmutableSet<ClassPath.ResourceInfo> resources = classPath.getResources();
+
         resources.stream()
             .filter(resource -> resource.getResourceName().startsWith("META-INF/resources/webjars/"))
             .forEach(resource -> {
                 String resourcePath = resource.getResourceName().substring("META-INF".length());
                 logger.trace("register {}", resourcePath);
-                controller.registerHandler(HttpMethod.GET, resourcePath, this);
-                controller.registerHandler(HttpMethod.HEAD, resourcePath, this);
+                controller.handler(this::resource)
+                    .param1(controller.param().path())
+                    .response(controller.response().optionalUrl())
+                    .handle(HttpMethod.GET, resourcePath);
             });
 
         resources.stream()
@@ -36,34 +37,24 @@ public class ResourceHandler extends AbstractComponent implements RestHandler {
             .forEach(resource -> {
                 String resourcePath = resource.getResourceName().substring("org/github/mitallast/taskflow/".length());
                 logger.info("register {}", resourcePath);
-                controller.registerHandler(HttpMethod.GET, resourcePath, this);
-                controller.registerHandler(HttpMethod.HEAD, resourcePath, this);
+                controller.handler(this::resource)
+                    .param1(controller.param().path())
+                    .response(controller.response().optionalUrl())
+                    .handle(HttpMethod.GET, resourcePath);
             });
     }
 
-    @Override
-    public void handleRequest(RestRequest request) {
-        logger.trace("try find {}", request.getQueryPath());
+    public Optional<URL> resource(String path) {
+        logger.trace("try find {}", path);
         URL url;
-        if (request.getQueryPath().startsWith("/resources/webjars/")) {
-            url = getClass().getResource("/META-INF" + request.getQueryPath());
-        } else if (request.getQueryPath().startsWith("/static/")) {
-            url = getClass().getResource("/org/github/mitallast/taskflow/" + request.getQueryPath());
+        if (path.startsWith("/resources/webjars/")) {
+            url = getClass().getResource("/META-INF" + path);
+        } else if (path.startsWith("/static/")) {
+            url = getClass().getResource("/org/github/mitallast/taskflow/" + path);
         } else {
             url = null;
         }
 
-        if (url == null) {
-            logger.trace("not found");
-            request.response().status(HttpResponseStatus.NOT_FOUND).empty();
-        } else {
-            try {
-                logger.trace("send {}", url);
-                request.response().file(url);
-            } catch (IOException e) {
-                logger.error(e);
-                request.response().status(HttpResponseStatus.INTERNAL_SERVER_ERROR).error(e);
-            }
-        }
+        return Optional.ofNullable(url);
     }
 }
