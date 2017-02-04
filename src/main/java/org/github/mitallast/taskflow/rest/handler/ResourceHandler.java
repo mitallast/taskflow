@@ -22,6 +22,10 @@ public class ResourceHandler extends AbstractComponent {
         ImmutableSet<ClassPath.ResourceInfo> resources = classPath.getResources();
 
         resources.stream()
+            .map(resource -> {
+                logger.info(resource);
+                return resource;
+            })
             .filter(resource -> resource.getResourceName().startsWith("META-INF/resources/webjars/"))
             .forEach(resource -> {
                 String resourcePath = resource.getResourceName().substring("META-INF".length());
@@ -42,6 +46,12 @@ public class ResourceHandler extends AbstractComponent {
                     .response(controller.response().optionalUrl())
                     .handle(HttpMethod.GET, resourcePath);
             });
+
+        logger.info("register favicon.ico");
+        controller.handler(this::resource)
+            .param1(controller.param().path())
+            .response(controller.response().optionalUrl())
+            .handle(HttpMethod.GET, "favicon.ico");
     }
 
     public Optional<URL> resource(String path) {
@@ -51,6 +61,8 @@ public class ResourceHandler extends AbstractComponent {
             url = getClass().getResource("/META-INF" + path);
         } else if (path.startsWith("/static/")) {
             url = getClass().getResource("/org/github/mitallast/taskflow/" + path);
+        } else if (path.startsWith("/favicon.ico")) {
+            url = getClass().getResource("/favicon.ico");
         } else {
             url = null;
         }

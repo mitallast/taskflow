@@ -9,16 +9,17 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.stream.ChunkedStream;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.github.mitallast.taskflow.common.json.JsonService;
 import org.github.mitallast.taskflow.rest.ResponseBuilder;
 import org.github.mitallast.taskflow.rest.RestRequest;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +30,12 @@ import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 public class HttpRequest implements RestRequest {
+    private final static Logger logger = LogManager.getLogger();
+    private final static MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+
+    private static final AsciiString APPLICATION_JAVASCRIPT = new AsciiString("application/javascript");
+    private static final AsciiString TEXT_CSS = new AsciiString("text/css");
+    private static final AsciiString TEXT_HTML = new AsciiString("text/html");
 
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest httpRequest;
@@ -148,6 +155,14 @@ public class HttpRequest implements RestRequest {
         }
 
         @Override
+        public ResponseBuilder header(AsciiString name, String value) {
+            Preconditions.checkNotNull(name);
+            Preconditions.checkNotNull(value);
+            headers.add(name, value);
+            return this;
+        }
+
+        @Override
         public void error(Throwable error) {
             Preconditions.checkNotNull(error);
             ByteBuf buffer = ctx.alloc().buffer();
@@ -201,59 +216,61 @@ public class HttpRequest implements RestRequest {
 
         @Override
         public void file(URL url) {
+            final String path = url.getPath();
+            logger.info("path: {}", path);
+            final InputStream stream;
             try {
-                file(url.toURI());
-            } catch (URISyntaxException e) {
-                throw new IOError(e);
-            }
-        }
-
-        @Override
-        public void file(URI uri) {
-            file(new File(uri));
-        }
-
-        @Override
-        public void file(File file) {
-            RandomAccessFile raf;
-            try {
-                raf = new RandomAccessFile(file, "r");
-            } catch (FileNotFoundException e) {
-                throw new IOError(e);
-            }
-            long fileLength = 0;
-            try {
-                fileLength = raf.length();
+                stream = url.openStream();
             } catch (IOException e) {
-                try {
-                    raf.close();
-                } catch (IOException ignore) {
-                }
                 throw new IOError(e);
             }
+
+            mimetype(path);
 
             DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK, headers);
-            HttpUtil.setContentLength(response, fileLength);
-
-            MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
-            response.headers().set(HttpHeaderNames.CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
+            HttpUtil.setTransferEncodingChunked(response, true);
 
             if (HttpUtil.isKeepAlive(httpRequest)) {
                 HttpUtil.setKeepAlive(response, true);
             }
             ctx.write(response);
-            ChannelFuture write = null;
+            ChannelFuture write = ctx.writeAndFlush(new HttpChunkedInput(new ChunkedStream(stream, 8192)));
+            if (!HttpUtil.isKeepAlive(httpRequest)) {
+                write.addListener(ChannelFutureListener.CLOSE);
+            }
+        }
+
+        @Override
+        public void file(File file) {
+
+            mimetype(file.getPath());
+
+            DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK, headers);
+            HttpUtil.setTransferEncodingChunked(response, true);
+
+            if (HttpUtil.isKeepAlive(httpRequest)) {
+                HttpUtil.setKeepAlive(response, true);
+            }
+            ctx.write(response);
             try {
-                write = ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(raf, 0, fileLength, 8192)));
+                ChannelFuture write = ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(file, 8192)));
                 if (!HttpUtil.isKeepAlive(httpRequest)) {
                     write.addListener(ChannelFutureListener.CLOSE);
                 }
             } catch (IOException e) {
-                try {
-                    raf.close();
-                } catch (IOException ignore) {
-                }
                 throw new IOError(e);
+            }
+        }
+
+        private void mimetype(String path) {
+            if (path.endsWith(".js")) {
+                header(HttpHeaderNames.CONTENT_TYPE, APPLICATION_JAVASCRIPT);
+            } else if (path.endsWith(".css")) {
+                header(HttpHeaderNames.CONTENT_TYPE, TEXT_CSS);
+            } else if (path.endsWith(".html")) {
+                header(HttpHeaderNames.CONTENT_TYPE, TEXT_HTML);
+            } else {
+                header(HttpHeaderNames.CONTENT_TYPE, mimeTypesMap.getContentType(path));
             }
         }
 

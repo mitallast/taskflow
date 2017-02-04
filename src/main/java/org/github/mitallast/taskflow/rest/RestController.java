@@ -14,7 +14,6 @@ import org.github.mitallast.taskflow.common.path.PathTrie;
 import org.github.mitallast.taskflow.rest.netty.HttpRequest;
 
 import java.io.File;
-import java.net.URI;
 import java.net.URL;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -174,10 +173,6 @@ public class RestController extends AbstractComponent {
 
         public BiConsumer<RestRequest, Optional<URL>> optionalUrl() {
             return optional(url());
-        }
-
-        public BiConsumer<RestRequest, URI> uri() {
-            return (request, file) -> request.response().file(file);
         }
 
         public BiConsumer<RestRequest, File> file() {

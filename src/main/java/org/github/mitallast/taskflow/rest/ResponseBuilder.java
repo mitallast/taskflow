@@ -5,8 +5,6 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.util.AsciiString;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 
 public interface ResponseBuilder {
@@ -19,6 +17,8 @@ public interface ResponseBuilder {
 
     ResponseBuilder header(AsciiString name, AsciiString value);
 
+    ResponseBuilder header(AsciiString name, String value);
+
     void error(Throwable throwable);
 
     void json(Object json);
@@ -28,8 +28,6 @@ public interface ResponseBuilder {
     void data(ByteBuf content);
 
     void file(URL url);
-
-    void file(URI uri);
 
     void file(File file);
 
