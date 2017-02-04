@@ -118,7 +118,7 @@ public class RestController extends AbstractComponent {
         }
     }
 
-    /**
+    /*
      * Functional API
      */
 
@@ -146,7 +146,7 @@ public class RestController extends AbstractComponent {
         return new Function3MapperBuilder<>(handler);
     }
 
-    /**
+    /*
      * Functional mappers
      */
 
