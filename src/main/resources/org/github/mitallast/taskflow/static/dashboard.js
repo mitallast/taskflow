@@ -19,6 +19,14 @@
                 templateUrl: '/dag-state.html',
                 controller: 'DagTokenCtrl'
             })
+            .when('/dag/create', {
+                templateUrl: '/dag-create.html',
+                controller: 'DagCreateCtrl'
+            })
+            .when('/dag/update/id/:id', {
+                templateUrl: '/dag-update.html',
+                controller: 'DagUpdateCtrl'
+            })
             .when('/dag/run', {
                 templateUrl: '/dag-run.html',
                 controller: 'DagRunCtrl'
@@ -40,6 +48,7 @@
             [
                 {href:'dag/latest', title:'Dag latest'},
                 {href:'dag/id/1', title:'Dag 1'},
+                {href:'dag/create', title:'Create Dag'},
             ],
             [
                 {href:'dag/run', title:'Dag run'},
@@ -70,6 +79,60 @@
             $scope.dag = response.data;
         });
     })
+    .controller('DagCreateCtrl', function($scope, $http){
+        $scope.operations = [
+            "dummy",
+            "shell"
+        ];
+        $scope.dag = {
+           token: '',
+           tasks: []
+        };
+        $scope.addTask = function() {
+            $scope.dag.tasks.push({
+                token: '',
+                operation: '',
+                depends: [],
+                command: {
+                    config: {},
+                    environment: {}
+                }
+            });
+        };
+        $scope.createDag = function() {
+            $http.put('/api/dag', $scope.dag)
+            .then(function(response){
+                console.log(response);
+            });
+        };
+    })
+    .controller('DagUpdateCtrl', function($scope, $http, $routeParams){
+        $scope.operations = [
+            "dummy",
+            "shell"
+        ];
+        $scope.addTask = function() {
+            $scope.dag.tasks.push({
+                token: '',
+                operation: '',
+                depends: [],
+                command: {
+                    config: {},
+                    environment: {}
+                }
+            });
+        };
+        $scope.updateDag = function() {
+            $http.post('/api/dag', $scope.dag)
+            .then(function(response){
+                $scope.dag = response.data;
+            });
+        };
+        $http.get('/api/dag/id/' + $routeParams.id)
+        .then(function(response){
+            $scope.dag = response.data;
+        });
+    })
     .controller('DagRunCtrl', function($scope, $http){
         $http.get('/api/dag/run')
         .then(function(response){
@@ -87,5 +150,21 @@
         .then(function(response){
             $scope.dag_run = response.data;
         });
-    });
+    })
+    .directive('jsonText', function() {
+         return {
+             restrict: 'A',
+             require: 'ngModel',
+             link: function(scope, element, attr, ngModel) {
+               function into(input) {
+                 return JSON.parse(input);
+               }
+               function out(data) {
+                 return JSON.stringify(data);
+               }
+               ngModel.$parsers.push(into);
+               ngModel.$formatters.push(out);
+             }
+         };
+     });;
 })();
