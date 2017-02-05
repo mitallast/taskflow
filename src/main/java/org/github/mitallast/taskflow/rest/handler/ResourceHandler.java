@@ -45,6 +45,14 @@ public class ResourceHandler extends AbstractComponent {
                         .response(controller.response().url())
                         .handle(HttpMethod.GET, resourcePath);
                 });
+
+            controller.handler(this::resourceFavicon)
+                .response(controller.response().url())
+                .handle(HttpMethod.GET, "favicon.ico");
+
+            controller.handler(this::resourceIndex)
+                .response(controller.response().url())
+                .handle(HttpMethod.GET, "/");
         } else {
             Path root = new File("./src/main/resources/org/github/mitallast/taskflow/static").toPath();
             Files.walk(root)
@@ -65,11 +73,15 @@ public class ResourceHandler extends AbstractComponent {
                         .response(controller.response().file())
                         .handle(HttpMethod.GET, resourcePath);
                 });
-        }
 
-        controller.handler(this::favicon)
-            .response(controller.response().url())
-            .handle(HttpMethod.GET, "favicon.ico");
+            controller.handler(this::fileFavicon)
+                .response(controller.response().file())
+                .handle(HttpMethod.GET, "favicon.ico");
+
+            controller.handler(this::fileIndex)
+                .response(controller.response().file())
+                .handle(HttpMethod.GET, "/");
+        }
     }
 
     public URL webjars(String path) {
@@ -84,7 +96,19 @@ public class ResourceHandler extends AbstractComponent {
         return new File("src/main/resources/org/github/mitallast/taskflow", path);
     }
 
-    public URL favicon() {
+    public URL resourceFavicon() {
         return getClass().getResource("/favicon.ico");
+    }
+
+    public URL resourceIndex() {
+        return getClass().getResource("/org/github/mitallast/taskflow/static/index.html");
+    }
+
+    public File fileFavicon() {
+        return new File("src/main/resources/favicon.ico");
+    }
+
+    public File fileIndex() {
+        return new File("src/main/resources/org/github/mitallast/taskflow/static/index.html");
     }
 }
