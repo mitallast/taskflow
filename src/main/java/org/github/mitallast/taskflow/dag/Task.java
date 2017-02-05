@@ -1,5 +1,7 @@
 package org.github.mitallast.taskflow.dag;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 import org.github.mitallast.taskflow.operation.OperationCommand;
 
@@ -18,7 +20,14 @@ public class Task {
         this(0, 0, token, depends, operation, command);
     }
 
-    public Task(long id, int version, String token, ImmutableList<String> depends, String operation, OperationCommand command) {
+    @JsonCreator
+    public Task(
+        @JsonProperty("id") long id,
+        @JsonProperty("version") int version,
+        @JsonProperty("token") String token,
+        @JsonProperty("depends") ImmutableList<String> depends,
+        @JsonProperty("operation") String operation,
+        @JsonProperty("command") OperationCommand command) {
         this.id = id;
         this.version = version;
         this.token = token;
@@ -49,6 +58,32 @@ public class Task {
 
     public OperationCommand command() {
         return command;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Task task = (Task) o;
+
+        if (id != task.id) return false;
+        if (version != task.version) return false;
+        if (!token.equals(task.token)) return false;
+        if (!depends.equals(task.depends)) return false;
+        if (!operation.equals(task.operation)) return false;
+        return command.equals(task.command);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (id ^ (id >>> 32));
+        result = 31 * result + version;
+        result = 31 * result + token.hashCode();
+        result = 31 * result + depends.hashCode();
+        result = 31 * result + operation.hashCode();
+        result = 31 * result + command.hashCode();
+        return result;
     }
 
     @Override

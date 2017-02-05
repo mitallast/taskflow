@@ -1,5 +1,7 @@
 package org.github.mitallast.taskflow.dag;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 
 /**
@@ -19,7 +21,13 @@ public class Dag {
         this(0, 0, token, tasks);
     }
 
-    public Dag(long id, int version, String token, ImmutableList<Task> tasks) {
+    @JsonCreator
+    public Dag(
+        @JsonProperty("id") long id,
+        @JsonProperty("version") int version,
+        @JsonProperty("token") String token,
+        @JsonProperty("tasks") ImmutableList<Task> tasks
+    ) {
         this.id = id;
         this.version = version;
         this.token = token;
@@ -40,6 +48,28 @@ public class Dag {
 
     public ImmutableList<Task> tasks() {
         return tasks;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Dag dag = (Dag) o;
+
+        if (id != dag.id) return false;
+        if (version != dag.version) return false;
+        if (!token.equals(dag.token)) return false;
+        return tasks.equals(dag.tasks);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (id ^ (id >>> 32));
+        result = 31 * result + version;
+        result = 31 * result + token.hashCode();
+        result = 31 * result + tasks.hashCode();
+        return result;
     }
 
     @Override

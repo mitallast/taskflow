@@ -3,6 +3,7 @@ package org.github.mitallast.taskflow.rest.handler;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import org.github.mitallast.taskflow.dag.Dag;
 import org.github.mitallast.taskflow.dag.DagPersistenceService;
 import org.github.mitallast.taskflow.rest.RestController;
 
@@ -16,12 +17,12 @@ public class DagController {
          */
 
         controller.handler(service::createDag)
-            .param1(controller.param().json())
+            .param1(controller.param().json(Dag.class))
             .response(controller.response().json())
             .handle(HttpMethod.PUT, "api/dag");
 
         controller.handler(service::updateDag)
-            .param1(controller.param().json())
+            .param1(controller.param().json(Dag.class))
             .response(controller.response().json())
             .handle(HttpMethod.POST, "api/dag");
 

@@ -1,5 +1,6 @@
 package org.github.mitallast.taskflow.operation;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Optional;
@@ -15,6 +16,7 @@ public class OperationEnvironment {
     }
 
     public OperationEnvironment(ImmutableMap<String, String> env) {
+        Preconditions.checkNotNull(env);
         this.env = env;
     }
 
@@ -29,6 +31,21 @@ public class OperationEnvironment {
 
     public ImmutableMap<String, String> map() {
         return env;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        OperationEnvironment that = (OperationEnvironment) o;
+
+        return env.equals(that.env);
+    }
+
+    @Override
+    public int hashCode() {
+        return env.hashCode();
     }
 
     @Override

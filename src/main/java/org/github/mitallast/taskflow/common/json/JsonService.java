@@ -4,11 +4,12 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
@@ -19,7 +20,6 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.operation.OperationEnvironment;
-import org.joda.time.DateTime;
 
 import java.io.IOError;
 import java.io.IOException;
@@ -40,12 +40,12 @@ public class JsonService extends AbstractComponent {
         module.addDeserializer(Config.class, new ConfigDeserializer());
         module.addSerializer(OperationEnvironment.class, new OperationEnvironmentSerializer());
         module.addDeserializer(OperationEnvironment.class, new OperationEnvironmentDeserializer());
-        module.addSerializer(DateTime.class, new DateTimeSerializer());
-        module.addDeserializer(DateTime.class, new DateTimeDeserializer());
 
         mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
         mapper.registerModule(module);
+        mapper.registerModule(new GuavaModule());
+        mapper.registerModule(new JodaModule());
     }
 
     public void serialize(ByteBuf buf, Object json) {
@@ -57,11 +57,19 @@ public class JsonService extends AbstractComponent {
         }
     }
 
-    public <T> T deserialize(ByteBuf buf) {
+    public <T> T deserialize(ByteBuf buf, Class<T> type) {
         InputStream input = new ByteBufInputStream(buf);
         try {
-            return mapper.readValue(input, new TypeReference<T>() {
-            });
+            return mapper.readValue(input, type);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public <T> T deserialize(ByteBuf buf, TypeReference<T> type) {
+        InputStream input = new ByteBufInputStream(buf);
+        try {
+            return mapper.readValue(input, type);
         } catch (IOException e) {
             throw new IOError(e);
         }
@@ -79,7 +87,7 @@ public class JsonService extends AbstractComponent {
     private static class ConfigDeserializer extends JsonDeserializer<Config> {
 
         @Override
-        public Config deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+        public Config deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
             String json = p.readValueAsTree().toString();
             return ConfigFactory.parseString(json);
         }
@@ -100,47 +108,8 @@ public class JsonService extends AbstractComponent {
 
         @Override
         public OperationEnvironment deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
-            if (p.nextToken() == JsonToken.START_OBJECT) {
-                ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
-                while (p.nextToken() != JsonToken.END_OBJECT) {
-                    if (p.currentToken() == JsonToken.FIELD_NAME) {
-                        String key = p.getCurrentName();
-                        if (p.nextToken() == JsonToken.VALUE_STRING) {
-                            String value = p.getText();
-                            builder.put(key, value);
-                        } else {
-                            throw new IllegalArgumentException("expected value string");
-                        }
-                    } else {
-                        throw new IllegalArgumentException("expected field name");
-                    }
-                }
-                return new OperationEnvironment(builder.build());
-            } else {
-                throw new IllegalArgumentException("expected start object");
-            }
-        }
-    }
-
-    private static class DateTimeSerializer extends JsonSerializer<DateTime> {
-        @Override
-        public void serialize(DateTime value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            if (value == null) {
-                gen.writeNull();
-            } else {
-                gen.writeString(value.toString());
-            }
-        }
-    }
-
-    private static class DateTimeDeserializer extends JsonDeserializer<DateTime> {
-        @Override
-        public DateTime deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-            if (p.nextToken() == JsonToken.VALUE_STRING) {
-                return DateTime.parse(p.getText());
-            } else {
-                return null;
-            }
+            ImmutableMap<String, String> map = p.readValueAs(new TypeReference<ImmutableMap<String, String>>() {});
+            return new OperationEnvironment(map);
         }
     }
 }

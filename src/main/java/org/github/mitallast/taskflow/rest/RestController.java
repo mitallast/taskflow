@@ -1,5 +1,6 @@
 package org.github.mitallast.taskflow.rest;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
@@ -231,8 +232,12 @@ public class RestController extends AbstractComponent {
             return string(name).andThen(Boolean::valueOf);
         }
 
-        public <T> Function<RestRequest, T> json() {
-            return request -> jsonService.deserialize(request.content());
+        public <T> Function<RestRequest, T> json(Class<T> type) {
+            return request -> jsonService.deserialize(request.content(), type);
+        }
+
+        public <T> Function<RestRequest, T> json(TypeReference<T> type) {
+            return request -> jsonService.deserialize(request.content(), type);
         }
     }
 
