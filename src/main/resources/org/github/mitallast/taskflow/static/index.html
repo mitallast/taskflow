@@ -15,8 +15,7 @@
 <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
-                    aria-expanded="false" aria-controls="navbar">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
                 <span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
@@ -39,7 +38,9 @@
     <div class="row">
         <div class="col-sm-3 col-md-2 sidebar" ng-controller="SidebarCtrl">
             <ul class="nav nav-sidebar" ng-repeat="menu in menus">
-                <li ng-repeat="link in menu" ng-class="activeClass(link.href)"><a href="#{{link.href}}">{{link.title}}</a></li>
+                <li ng-repeat="link in menu" ng-class="activeClass(link.href)">
+                    <a href="#{{link.href}}">{{link.title}}</a>
+                </li>
             </ul>
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main" ng-view></div>
@@ -75,7 +76,7 @@
 <script type="text/ng-template" id="/dag-state.html">
     <h2 class="page-header">DAG {{dag.token}} #{{dag.version}}</h2>
 
-    <div >
+    <div>
         <p>id: {{dag.id}}</p>
         <p>version: {{dag.version}}</p>
         <p>token: {{dag.token}}</p>
@@ -123,35 +124,39 @@
 <script type="text/ng-template" id="/dag-create.html">
     <h2 class="page-header">Create DAG</h2>
 
-    <pre>{{dag|json}}</pre>
+    <pre>{{dag}}</pre>
 
-    <form name="create-dag" ng-submit="createDag()">
-        <div class="form-group">
-            <label>Token</label>
-            <input ng-model="dag.token" class="form-control" placeholder="token">
+    <form name="dagForm" novalidate ng-submit="dagForm.$valid && createDag()">
+        <div class="form-group" ng-class="{'has-error':dagForm.token.$touched && dagForm.token.$invalid}">
+            <label class="control-label">Token</label>
+            <input ng-model="dag.token" name="token" required class="form-control" placeholder="token">
+            <span class="help-block" ng-show="dagForm.token.$touched && dagForm.token.$error.required">required</span>
         </div>
 
-        <div class="panel panel-default" ng-repeat="task in dag.tasks">
+        <div class="panel panel-default" ng-repeat="task in dag.tasks" ng-form="taskForm">
             <div class="panel-body">
-                <label>task: {{task.token}}</label>
-                <div class="form-group">
-                    <label>Token</label>
-                    <input ng-model="task.token" class="form-control" placeholder="token">
+                <label class="control-label">task: {{task.token}}</label>
+                <div class="form-group" ng-class="{'has-error':taskForm.token.$touched && taskForm.token.$invalid}">
+                    <label class="control-label">Token</label>
+                    <input ng-model="task.token" name="token" required class="form-control" placeholder="token">
+                    <span class="help-block" ng-show="taskForm.token.$touched && taskForm.token.$error.required">required</span>
+                </div>
+                <div class="form-group" ng-class="{'has-error':taskForm.operation.$touched && taskForm.operation.$invalid}">
+                    <label class="control-label">Operation</label>
+                    <select ng-model="task.operation" name="operation" required class="form-control" ng-options="item for item in operations"></select>
+                    <span class="help-block" ng-show="taskForm.operation.$touched && taskForm.operation.$error.required">required</span>
+                </div>
+                <div class="form-group" ng-class="{'has-error':taskForm.depends.$touched && taskForm.depends.$invalid}">
+                    <label class="control-label">Depends</label>
+                    <textarea depends ng-model="task.depends" name="depends" required class="form-control"></textarea>
+                    <span class="help-block" ng-show="taskForm.depends.$touched && taskForm.depends.$error.required">required</span>
                 </div>
                 <div class="form-group">
-                    <label>Operation</label>
-                    <select ng-model="task.operation" class="form-control" ng-options="item for item in operations"></select>
-                </div>
-                <div class="form-group">
-                    <label>Depends on</label>
-                    <textarea json-text ng-model="task.depends" class="form-control"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Operation Config</label>
+                    <label class="control-label">Operation Config</label>
                     <textarea json-text ng-model="task.command.config" class="form-control"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Operation Environment</label>
+                    <label class="control-label">Operation Environment</label>
                     <textarea json-text ng-model="task.command.environment" class="form-control"></textarea>
                 </div>
             </div>
@@ -159,7 +164,7 @@
 
         <button ng-click="addTask()" type="button" class="btn btn-default">Add task</button>
 
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btn btn-primary" ng-disabled="dagForm.$invalid">Submit</button>
     </form>
 </script>
 <script type="text/ng-template" id="/dag-update.html">
@@ -172,8 +177,7 @@
             <div class="panel-body">
                 <label>task: {{task.token}}</label>
                 <div class="form-group">
-                    <label>Token</label>
-                    <input ng-model="task.token" class="form-control" placeholder="token">
+                    <label>Token</label> <input ng-model="task.token" class="form-control" placeholder="token">
                 </div>
                 <div class="form-group">
                     <label>Operation</label>

@@ -5,7 +5,7 @@
         $locationProvider.hashPrefix("");
         $routeProvider
             .when('/', {
-                redirectTo: '/'
+                redirectTo: '/dag/latest'
             })
             .when('/dag/latest', {
                 templateUrl: '/dag-latest.html',
@@ -152,19 +152,24 @@
         });
     })
     .directive('jsonText', function() {
-         return {
-             restrict: 'A',
-             require: 'ngModel',
-             link: function(scope, element, attr, ngModel) {
-               function into(input) {
-                 return JSON.parse(input);
-               }
-               function out(data) {
-                 return JSON.stringify(data);
-               }
-               ngModel.$parsers.push(into);
-               ngModel.$formatters.push(out);
-             }
-         };
-     });;
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            link: function(scope, element, attr, ngModel) {
+                ngModel.$parsers.push(function(input) {
+                    try{
+                        var json = JSON.parse(input);
+                        ngModel.$setValidity('json', true);
+                        return json;
+                    }catch(e){
+                        ngModel.$setValidity('json', false);
+                        return undefined;
+                    }
+                });
+                ngModel.$formatters.push(function(data) {
+                    return JSON.stringify(data);
+                });
+            }
+        };
+    });
 })();
