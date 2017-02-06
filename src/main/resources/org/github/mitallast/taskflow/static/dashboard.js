@@ -88,6 +88,7 @@
            token: '',
            tasks: []
         };
+        $scope.errors = false;
         $scope.addTask = function() {
             $scope.dag.tasks.push({
                 token: '',
@@ -98,6 +99,17 @@
                     environment: {}
                 }
             });
+        };
+        $scope.validateDag = function() {
+            $http.put('/api/dag/validate', $scope.dag)
+            .then(
+                function(response){
+                    $scope.errors = false;
+                },
+                function(response){
+                    $scope.errors = response.data;
+                }
+            );
         };
         $scope.createDag = function() {
             $http.put('/api/dag', $scope.dag)
@@ -121,6 +133,17 @@
                     environment: {}
                 }
             });
+        };
+        $scope.validateDag = function() {
+            $http.put('/api/dag/validate', $scope.dag)
+            .then(
+                function(response){
+                    $scope.errors = false;
+                },
+                function(response){
+                    $scope.errors = response.data;
+                }
+            );
         };
         $scope.updateDag = function() {
             $http.post('/api/dag', $scope.dag)

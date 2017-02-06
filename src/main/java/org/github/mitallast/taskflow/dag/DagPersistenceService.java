@@ -1,26 +1,29 @@
 package org.github.mitallast.taskflow.dag;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigRenderOptions;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
-import org.github.mitallast.taskflow.operation.*;
+import org.github.mitallast.taskflow.common.json.JsonService;
+import org.github.mitallast.taskflow.operation.OperationCommand;
+import org.github.mitallast.taskflow.operation.OperationEnvironment;
+import org.github.mitallast.taskflow.operation.OperationResult;
+import org.github.mitallast.taskflow.operation.OperationStatus;
 import org.github.mitallast.taskflow.persistence.PersistenceService;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.jooq.*;
-import org.jooq.Table;
 import org.jooq.impl.DSL;
 import org.jooq.impl.SQLDataType;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOError;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.sql.Timestamp;
@@ -35,6 +38,7 @@ import static org.jooq.impl.DSL.*;
 public class DagPersistenceService extends AbstractComponent {
 
     private final PersistenceService persistence;
+    private final JsonService jsonService;
 
     private static class sequence {
         private final static Sequence<Long> dag_seq = sequence("dag_seq", SQLDataType.BIGINT);
@@ -78,9 +82,10 @@ public class DagPersistenceService extends AbstractComponent {
     }
 
     @Inject
-    public DagPersistenceService(Config config, PersistenceService persistence) {
+    public DagPersistenceService(Config config, PersistenceService persistence, JsonService jsonService) {
         super(config, DagPersistenceService.class);
         this.persistence = persistence;
+        this.jsonService = jsonService;
 
         try (DSLContext context = persistence.context()) {
 
@@ -594,7 +599,7 @@ public class DagPersistenceService extends AbstractComponent {
         }
     }
 
-    private static Dag dag(Record record, ImmutableList<Task> tasks) {
+    private Dag dag(Record record, ImmutableList<Task> tasks) {
         return new Dag(
             record.get(field.id),
             record.get(field.version),
@@ -603,7 +608,7 @@ public class DagPersistenceService extends AbstractComponent {
         );
     }
 
-    private static Task task(Record record) {
+    private Task task(Record record) {
         return new Task(
             record.get(field.id),
             record.get(field.version),
@@ -617,7 +622,7 @@ public class DagPersistenceService extends AbstractComponent {
         );
     }
 
-    private static TaskRun taskRun(Record record) {
+    private TaskRun taskRun(Record record) {
         return new TaskRun(
             record.get(field.id),
             record.get(field.dag_id),
@@ -631,7 +636,7 @@ public class DagPersistenceService extends AbstractComponent {
         );
     }
 
-    private static DagRun dagRun(Record record, ImmutableList<TaskRun> tasks) {
+    private DagRun dagRun(Record record, ImmutableList<TaskRun> tasks) {
         return new DagRun(
             record.get(field.id),
             record.get(field.dag_id),
@@ -643,7 +648,7 @@ public class DagPersistenceService extends AbstractComponent {
         );
     }
 
-    private static OperationResult operationResult(Record record) {
+    private OperationResult operationResult(Record record) {
         String status = record.get(field.operation_status);
         if (status == null) {
             return null;
@@ -656,7 +661,7 @@ public class DagPersistenceService extends AbstractComponent {
         }
     }
 
-    private static DateTime date(Timestamp timestamp) {
+    private DateTime date(Timestamp timestamp) {
         if (timestamp == null) {
             return null;
         } else {
@@ -664,49 +669,38 @@ public class DagPersistenceService extends AbstractComponent {
         }
     }
 
-    private static byte[] serialize(ImmutableList<String> tokens) throws IOException {
+    private byte[] serialize(ImmutableSet<String> tokens) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        new ObjectMapper().writeValue(output, tokens);
+        jsonService.serialize(output, tokens);
         return output.toByteArray();
     }
 
-    private static ImmutableList<String> deserializeTokens(byte[] data) {
+    private ImmutableSet<String> deserializeTokens(byte[] data) {
         ByteArrayInputStream input = new ByteArrayInputStream(data);
-        try {
-            List<String> list = new ObjectMapper().readValue(input, new TypeReference<List<String>>() {
-            });
-
-            return ImmutableList.copyOf(list);
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
+        TypeReference<ImmutableSet<String>> type = new TypeReference<ImmutableSet<String>>() {};
+        return jsonService.deserialize(input, type);
     }
 
-    private static byte[] serialize(Config config) {
+    private byte[] serialize(Config config) {
         return config.root()
             .render(ConfigRenderOptions.concise())
             .getBytes(Charset.forName("UTF-8"));
     }
 
-    private static Config deserializeConfig(byte[] data) {
+    private Config deserializeConfig(byte[] data) {
         String str = new String(data, Charset.forName("UTF-8"));
         return ConfigFactory.parseString(str);
     }
 
-    private static byte[] serialize(ImmutableMap<String, String> map) throws IOException {
+    private byte[] serialize(ImmutableMap<String, String> map) throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        new ObjectMapper().writeValue(output, map);
+        jsonService.serialize(output, map);
         return output.toByteArray();
     }
 
-    private static ImmutableMap<String, String> deserializeMap(byte[] data) {
+    private ImmutableMap<String, String> deserializeMap(byte[] data) {
         ByteArrayInputStream input = new ByteArrayInputStream(data);
-        try {
-            Map<String, String> map = new ObjectMapper().readValue(input, new TypeReference<Map<String, String>>() {
-            });
-            return ImmutableMap.copyOf(map);
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
+        TypeReference<ImmutableMap<String, String>> type = new TypeReference<ImmutableMap<String, String>>() {};
+        return jsonService.deserialize(input, type);
     }
 }

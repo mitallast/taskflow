@@ -2,7 +2,7 @@ package org.github.mitallast.taskflow.dag;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.github.mitallast.taskflow.operation.OperationCommand;
 
 /**
@@ -12,11 +12,11 @@ public class Task {
     private final long id;
     private final int version;
     private final String token;
-    private final ImmutableList<String> depends;
+    private final ImmutableSet<String> depends;
     private final String operation;
     private final OperationCommand command;
 
-    public Task(String token, ImmutableList<String> depends, String operation, OperationCommand command) {
+    public Task(String token, ImmutableSet<String> depends, String operation, OperationCommand command) {
         this(0, 0, token, depends, operation, command);
     }
 
@@ -25,7 +25,7 @@ public class Task {
         @JsonProperty("id") long id,
         @JsonProperty("version") int version,
         @JsonProperty("token") String token,
-        @JsonProperty("depends") ImmutableList<String> depends,
+        @JsonProperty("depends") ImmutableSet<String> depends,
         @JsonProperty("operation") String operation,
         @JsonProperty("command") OperationCommand command) {
         this.id = id;
@@ -48,7 +48,7 @@ public class Task {
         return token;
     }
 
-    public ImmutableList<String> depends() {
+    public ImmutableSet<String> depends() {
         return depends;
     }
 

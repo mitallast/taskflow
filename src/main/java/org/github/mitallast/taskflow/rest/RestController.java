@@ -49,6 +49,8 @@ public class RestController extends AbstractComponent {
         try {
             executeHandler(request);
         } catch (Throwable e) {
+            logger.warn("error process request {} {}", request.getHttpMethod(), request.getUri());
+            logger.warn("unexpected exception", e);
             try {
                 request.response()
                     .status(HttpResponseStatus.INTERNAL_SERVER_ERROR)
@@ -67,6 +69,7 @@ public class RestController extends AbstractComponent {
         if (handler != null) {
             handler.handleRequest(request);
         } else {
+            logger.warn("handler not found for {} {}", request.getHttpMethod(), request.getUri());
             if (request.getHttpMethod() == HttpMethod.OPTIONS) {
                 request.response()
                     .status(HttpResponseStatus.OK)

@@ -2,6 +2,7 @@ package org.github.mitallast.taskflow.common.org.github.mitallast.taskflow.dag;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.typesafe.config.ConfigFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -29,7 +30,7 @@ public class JsonSpec {
                     12455,
                     345,
                     "test_task",
-                    ImmutableList.of("test_task"),
+                    ImmutableSet.of("test_task"),
                     "dummy",
                     new OperationCommand(
                         ConfigFactory.parseString("test=test"),

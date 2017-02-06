@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
@@ -19,6 +19,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
+import org.github.mitallast.taskflow.common.error.Errors;
 import org.github.mitallast.taskflow.operation.OperationEnvironment;
 
 import java.io.IOError;
@@ -39,6 +40,7 @@ public class JsonService extends AbstractComponent {
         module.addSerializer(Config.class, new ConfigSerializer());
         module.addDeserializer(Config.class, new ConfigDeserializer());
         module.addSerializer(OperationEnvironment.class, new OperationEnvironmentSerializer());
+        module.addSerializer(Errors.class, new ErrorsSerializer());
         module.addDeserializer(OperationEnvironment.class, new OperationEnvironmentDeserializer());
 
         mapper = new ObjectMapper();
@@ -49,7 +51,22 @@ public class JsonService extends AbstractComponent {
     }
 
     public void serialize(ByteBuf buf, Object json) {
-        OutputStream out = new ByteBufOutputStream(buf);
+        try (OutputStream out = new ByteBufOutputStream(buf)) {
+            serialize(out, json);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public String serialize(Object json) {
+        try {
+            return mapper.writeValueAsString(json);
+        } catch (JsonProcessingException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public void serialize(OutputStream out, Object json) {
         try {
             mapper.writeValue(out, json);
         } catch (IOException e) {
@@ -58,7 +75,14 @@ public class JsonService extends AbstractComponent {
     }
 
     public <T> T deserialize(ByteBuf buf, Class<T> type) {
-        InputStream input = new ByteBufInputStream(buf);
+        try (InputStream input = new ByteBufInputStream(buf)) {
+            return deserialize(input, type);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public <T> T deserialize(InputStream input, Class<T> type) {
         try {
             return mapper.readValue(input, type);
         } catch (IOException e) {
@@ -67,7 +91,14 @@ public class JsonService extends AbstractComponent {
     }
 
     public <T> T deserialize(ByteBuf buf, TypeReference<T> type) {
-        InputStream input = new ByteBufInputStream(buf);
+        try (InputStream input = new ByteBufInputStream(buf)) {
+            return deserialize(input, type);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public <T> T deserialize(InputStream input, TypeReference<T> type) {
         try {
             return mapper.readValue(input, type);
         } catch (IOException e) {
@@ -108,8 +139,35 @@ public class JsonService extends AbstractComponent {
 
         @Override
         public OperationEnvironment deserialize(JsonParser p, DeserializationContext ctx) throws IOException {
-            ImmutableMap<String, String> map = p.readValueAs(new TypeReference<ImmutableMap<String, String>>() {});
+            ImmutableMap<String, String> map = p.readValueAs(new TypeReference<ImmutableMap<String, String>>() {
+            });
             return new OperationEnvironment(map);
+        }
+    }
+
+    private static class ErrorsSerializer extends JsonSerializer<Errors> {
+
+        @Override
+        public void serialize(Errors value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            if (value.valid()) {
+                gen.writeNull();
+            } else {
+                gen.writeStartObject();
+                if (!value.errors().isEmpty()) {
+                    for (Map.Entry<String, String> entry : value.errors().entrySet()) {
+                        gen.writeStringField(entry.getKey(), entry.getValue());
+                    }
+                }
+                if (!value.nested().isEmpty()) {
+                    for (Map.Entry<String, Errors> entry : value.nested().entrySet()) {
+                        if (!entry.getValue().valid()) {
+                            gen.writeFieldName(entry.getKey());
+                            serialize(entry.getValue(), gen, serializers);
+                        }
+                    }
+                }
+                gen.writeEndObject();
+            }
         }
     }
 }

@@ -1,6 +1,6 @@
 package org.github.mitallast.taskflow;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -38,7 +38,7 @@ public class Main {
 
         Dag dag1 = dagPersistence.createDag(new Dag(
             "test_dag",
-            new Task("test_task_1", ImmutableList.of(), "test_op", new OperationCommand(ConfigFactory.empty(), new OperationEnvironment()))
+            new Task("test_task_1", ImmutableSet.of(), "test_op", new OperationCommand(ConfigFactory.empty(), new OperationEnvironment()))
         ));
 
         Dag dag2 = dagPersistence.updateDag(dag1);
