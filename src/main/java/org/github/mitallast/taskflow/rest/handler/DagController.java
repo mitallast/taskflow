@@ -13,10 +13,12 @@ import java.util.Optional;
 
 public class DagController {
 
+    private final DagService dagService;
     private final DagPersistenceService persistenceService;
 
     @Inject
     public DagController(RestController controller, DagService dagService, DagPersistenceService persistenceService) {
+        this.dagService = dagService;
         this.persistenceService = persistenceService;
 
         controller.handler(dagService::validate)
@@ -66,10 +68,10 @@ public class DagController {
     }
 
     private Optional<DagRun> runDagById(long id) {
-        return persistenceService.findDagById(id).map(persistenceService::createDagRun);
+        return persistenceService.findDagById(id).map(dagService::createDagRun);
     }
 
     private Optional<DagRun> runDagByToken(String token) {
-        return persistenceService.findDagByToken(token).map(persistenceService::createDagRun);
+        return persistenceService.findDagByToken(token).map(dagService::createDagRun);
     }
 }

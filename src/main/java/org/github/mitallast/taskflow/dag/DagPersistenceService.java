@@ -679,7 +679,8 @@ public class DagPersistenceService extends AbstractComponent {
 
     private ImmutableSet<String> deserializeTokens(byte[] data) {
         ByteArrayInputStream input = new ByteArrayInputStream(data);
-        TypeReference<ImmutableSet<String>> type = new TypeReference<ImmutableSet<String>>() {};
+        TypeReference<ImmutableSet<String>> type = new TypeReference<ImmutableSet<String>>() {
+        };
         return jsonService.deserialize(input, type);
     }
 
@@ -702,7 +703,8 @@ public class DagPersistenceService extends AbstractComponent {
 
     private ImmutableMap<String, String> deserializeMap(byte[] data) {
         ByteArrayInputStream input = new ByteArrayInputStream(data);
-        TypeReference<ImmutableMap<String, String>> type = new TypeReference<ImmutableMap<String, String>>() {};
+        TypeReference<ImmutableMap<String, String>> type = new TypeReference<ImmutableMap<String, String>>() {
+        };
         return jsonService.deserialize(input, type);
     }
 }

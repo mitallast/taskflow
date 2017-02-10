@@ -12,6 +12,7 @@ import org.github.mitallast.taskflow.dag.*;
 import org.github.mitallast.taskflow.operation.*;
 import org.github.mitallast.taskflow.persistence.PersistenceModule;
 import org.github.mitallast.taskflow.rest.RestModule;
+import org.github.mitallast.taskflow.scheduler.SchedulerModule;
 
 import java.io.IOException;
 
@@ -27,6 +28,7 @@ public class Main {
         modules.add(new PersistenceModule());
         modules.add(new OperationModule());
         modules.add(new DagModule());
+        modules.add(new SchedulerModule());
         modules.add(new RestModule());
 
         Injector injector = modules.createInjector();
@@ -36,42 +38,10 @@ public class Main {
 
         DagPersistenceService dagPersistence = injector.getInstance(DagPersistenceService.class);
 
-        Dag dag1 = dagPersistence.createDag(new Dag(
+        dagPersistence.createDag(new Dag(
             "test_dag",
             new Task("test_task_1", ImmutableSet.of(), "dummy", new OperationCommand(ConfigFactory.empty(), new OperationEnvironment()))
         ));
-
-        Dag dag2 = dagPersistence.updateDag(dag1);
-        Dag dag3 = dagPersistence.updateDag(dag2);
-        Dag dag4 = dagPersistence.updateDag(dag3);
-
-        System.out.println(dagPersistence.findLatestDags());
-        System.out.println(dagPersistence.findDagById(dag1.id()));
-        System.out.println(dagPersistence.findDagByToken(dag1.token()));
-
-        DagRun dagRun1 = dagPersistence.createDagRun(dag1);
-        DagRun dagRun2 = dagPersistence.createDagRun(dag2);
-        DagRun dagRun3 = dagPersistence.createDagRun(dag3);
-        DagRun dagRun4 = dagPersistence.createDagRun(dag4);
-        DagRun dagRun5 = dagPersistence.createDagRun(dag4);
-
-        dagPersistence.startDagRun(dagRun1.id());
-        dagPersistence.startDagRun(dagRun2.id());
-        dagPersistence.startDagRun(dagRun3.id());
-        dagPersistence.startDagRun(dagRun4.id());
-
-        dagPersistence.startTaskRun(dagRun1.tasks().get(0).id());
-        dagPersistence.startTaskRun(dagRun2.tasks().get(0).id());
-        dagPersistence.startTaskRun(dagRun3.tasks().get(0).id());
-        dagPersistence.startTaskRun(dagRun4.tasks().get(0).id());
-
-        dagPersistence.markTaskRunSuccess(dagRun1.tasks().get(0).id(), new OperationResult(OperationStatus.SUCCESS, "stdout", ""));
-        dagPersistence.markTaskRunFailed(dagRun2.tasks().get(0).id(), new OperationResult(OperationStatus.FAILED, "", "stderr"));
-        dagPersistence.markTaskRunCanceled(dagRun3.tasks().get(0).id());
-
-        dagPersistence.markDagRunSuccess(dagRun1.id());
-        dagPersistence.markDagRunFailed(dagRun2.id());
-        dagPersistence.markDagRunCanceled(dagRun3.id());
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {

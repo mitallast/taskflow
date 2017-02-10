@@ -330,8 +330,8 @@
             <td>{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.status}}</td>
             <td>{{run.operationResult.status}}</td>
-            <td>{{run.operationResult.stdout}}</td>
-            <td>{{run.operationResult.stderr}}</td>
+            <td><pre ng-show="run.operationResult.stdout">{{run.operationResult.stdout}}</pre></td>
+            <td><pre ng-show="run.operationResult.stderr">{{run.operationResult.stderr}}</pre></td>
         </tr>
         </tbody>
     </table>
