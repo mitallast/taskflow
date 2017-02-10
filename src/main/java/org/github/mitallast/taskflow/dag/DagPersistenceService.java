@@ -87,6 +87,7 @@ public class DagPersistenceService extends AbstractComponent {
         this.persistence = persistence;
         this.jsonService = jsonService;
 
+        if(false)
         try (DSLContext context = persistence.context()) {
 
             context.dropTableIfExists(table.task_run).execute();
@@ -158,7 +159,7 @@ public class DagPersistenceService extends AbstractComponent {
                 .constraint(constraint().primaryKey(field.id))
                 .constraint(constraint("task_run_fk_dag_run").foreignKey(field.dag_run_id).references(table.dag_run, field.id))
                 .constraint(constraint("task_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
-                .constraint(constraint("task_run_fk_task").foreignKey(field.task_id).references(table.task_run, field.id))
+                .constraint(constraint("task_run_fk_task").foreignKey(field.task_id).references(table.task, field.id))
                 .execute();
         }
     }

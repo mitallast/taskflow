@@ -53,7 +53,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
                 }
                 for (Task task : tasks) {
                     for (String depends : task.depends()) {
-                        graph.addEdge(task.token(), depends);
+                        graph.addEdge(depends, task.token());
                     }
                 }
             } catch (IllegalArgumentException e) {
@@ -82,7 +82,6 @@ public class DefaultDagService extends AbstractComponent implements DagService {
                 }
 
                 if (task.depends() != null && !task.depends().isEmpty()) {
-                    taskBuilder.not(ImmutableSet.of(task.depends()).size() == task.depends().size()).accept("depends", "not unique");
                     for (String depends : task.depends()) {
                         taskBuilder.required(depends).accept("depends", "empty token");
                         taskBuilder.not(tokens.contains(depends)).accept("depends", "undefined token");

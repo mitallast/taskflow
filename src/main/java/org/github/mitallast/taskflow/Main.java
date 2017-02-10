@@ -38,6 +38,7 @@ public class Main {
 
         DagPersistenceService dagPersistence = injector.getInstance(DagPersistenceService.class);
 
+        if(false)
         dagPersistence.createDag(new Dag(
             "test_dag",
             new Task("test_task_1", ImmutableSet.of(), "dummy", new OperationCommand(ConfigFactory.empty(), new OperationEnvironment()))

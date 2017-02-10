@@ -300,9 +300,19 @@
 <script type="text/ng-template" id="/dag-run-state.html">
     <h2 class="page-header">DAG run state</h2>
 
-    <p>id: {{dag_run.id}}</p><p>dag_id: {{dag_run.dagId}}</p><p>created: {{dag_run.createdDate | date:'yyyy-MM-dd
-        HH:mm:ss'}}</p><p>start: {{dag_run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</p><p>finish: {{dag_run.finishDate |
-        date:'yyyy-MM-dd HH:mm:ss'}}</p><p>status: {{dag_run.status}}</p><p>tasks:{{dag_run.tasks.length}}</p>
+    <p>id: {{dag_run.id}}</p>
+
+    <p>dag_id: {{dag_run.dagId}}</p>
+
+    <p>created: {{dag_run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</p>
+
+    <p>start: {{dag_run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</p>
+
+    <p>finish: {{dag_run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</p>
+
+    <p>status: {{dag_run.status}}</p>
+
+    <p>tasks:{{dag_run.tasks.length}}</p>
 
     <table class="table table-stripped">
         <thead>
@@ -326,15 +336,21 @@
             <td>{{run.dagId}}</td>
             <td>{{run.dagRunId}}</td>
             <td>{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
-            <td>{{run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
-            <td>{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
+            <td>{{run.startDate | date:'yyyy-MM-dd HH:mm:ss sss'}}</td>
+            <td>{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss sss'}}</td>
             <td>{{run.status}}</td>
             <td>{{run.operationResult.status}}</td>
-            <td><pre ng-show="run.operationResult.stdout">{{run.operationResult.stdout}}</pre></td>
-            <td><pre ng-show="run.operationResult.stderr">{{run.operationResult.stderr}}</pre></td>
+            <td>
+                <pre ng-show="run.operationResult.stdout">{{run.operationResult.stdout}}</pre>
+            </td>
+            <td>
+                <pre ng-show="run.operationResult.stderr">{{run.operationResult.stderr}}</pre>
+            </td>
         </tr>
         </tbody>
     </table>
+
+    <div class="gantt" diagram-gantt="dag_run"></div>
 </script>
 
 <script type="text/ng-template" id="/operations.html">
@@ -350,6 +366,7 @@
 
 <script src="/resources/webjars/jquery/1.11.1/jquery.min.js"></script>
 <script src="/resources/webjars/bootstrap/3.3.7-1/js/bootstrap.min.js"></script>
+<script src="/resources/webjars/d3js/4.2.1/d3.min.js"></script>
 <script src="/resources/webjars/angularjs/1.6.1/angular.min.js"></script>
 <script src="/resources/webjars/angularjs/1.6.1/angular-route.min.js"></script>
 <script src="/static/dashboard.js"></script>

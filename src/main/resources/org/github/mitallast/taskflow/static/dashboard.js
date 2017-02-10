@@ -1,4 +1,6 @@
 (function(){
+    'strict';
+
     angular.module('dag', ['ngRoute'])
     .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider){
         $locationProvider.html5Mode(false);
@@ -237,6 +239,124 @@
         .then(function(response){
             $scope.operations = response.data;
         });
+    })
+    .directive('diagramGantt', function() {
+        return {
+            restrict: 'A',
+            scope: true,
+            transclude: true,
+            link: function(scope, element, attrs) {
+                scope.$watch('dag_run', function(){
+                    if(scope.dag_run){
+                        scope.render(scope.dag_run);
+                    }
+                });
+                scope.render = function(dag_run) {
+                    var tasks = dag_run.tasks;
+
+                    var barHeight = 50;
+                    var gap = barHeight + 4;
+                    var sidePadding = 75;
+
+                    var w = 800;
+                    var h = barHeight * tasks.length + sidePadding;
+
+                    var svg = d3.select(element[0])
+                        .append("svg")
+                        .attr("width", w)
+                        .attr("height", h)
+                        .attr("class", "svg");
+
+                    var timeScale = d3.scaleTime()
+                        .domain([
+                            d3.min(tasks, function(d) { return new Date(d.startDate); }),
+                            d3.max(tasks, function(d) { return new Date(d.finishDate); })
+                        ])
+                        .range([0, w]);
+
+                    var categories = tasks.map(function(t){ return t.id; })
+
+                    var colorScale = d3.scaleLinear()
+                        .domain([0, tasks.length])
+                        .range(["#00B9FA", "#F95002"])
+                        .interpolate(d3.interpolateHcl);
+
+                    makeGrid();
+                    drawRects(tasks);
+
+                    function makeGrid(){
+                        var xAxis = d3.axisBottom(timeScale)
+                            //.ticks(1, "s")
+                            .tickSize(-h+20, 0, 0)
+                            .tickFormat(d3.timeFormat("%X"));
+
+                        var grid = svg.append('g')
+                            .attr('class', 'grid')
+                            .attr('transform', 'translate(0 , ' + (h - 50) + ')')
+                            .call(xAxis)
+                            .selectAll("text")
+                                .style("text-anchor", "middle")
+                                .attr("fill", "#000")
+                                .attr("stroke", "none")
+                                .attr("font-size", 10)
+                                .attr("dy", "1em");
+                    }
+
+                    function drawRects(tasks){
+
+                        var rectangles = svg.append('g')
+                            .selectAll("rect")
+                            .data(tasks)
+                            .enter();
+
+                        rectangles.append("rect")
+                            .attr("rx", 3)
+                            .attr("ry", 3)
+                            .attr("x", function(d) {
+                                console.log(new Date(d.startDate))
+                                return timeScale(new Date(d.startDate));
+                            })
+                            .attr("y", function(d, i){ return i*gap; })
+                            .attr("width", function(d){ return (timeScale(new Date(d.finishDate))-timeScale(new Date(d.startDate))); })
+                            .attr("height", barHeight)
+                            .attr("stroke", "none")
+                            .attr("fill", function(d){
+                                for (var i = 0; i < categories.length; i++){
+                                    if (d.id == categories[i]){
+                                        return colorScale(i);
+                                    }
+                                }
+                            })
+
+                        rectangles.append("text")
+                            .text(function(d){
+                                return d.id;
+                            })
+                            .attr("x", function(d){
+                                return (timeScale(new Date(d.finishDate))-timeScale(new Date(d.startDate)))/2 + timeScale(new Date(d.startDate));
+                            })
+                            .attr("y", function(d, i){
+                                return i*gap + barHeight / 2 + 4;
+                            })
+                            .attr("font-size", 11)
+                            .attr("text-anchor", "middle")
+                            .attr("text-height", barHeight)
+                            .attr("fill", "#fff");
+                    }
+
+                    function getCounts(arr) {
+                        var i = arr.length, // var to loop over
+                        obj = {}; // obj to store results
+                        while (i) obj[arr[--i]] = (obj[arr[i]] || 0) + 1; // count occurrences
+                        return obj;
+                    }
+
+                    function getCount(word, arr) {
+                        return getCounts(arr)[word] || 0;
+                    }
+                };
+            }
+        };
     })
     .directive('jsonText', function() {
         return {

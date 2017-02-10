@@ -41,8 +41,8 @@ public class ShellOperation extends AbstractComponent implements Operation {
         logger.info("charset: {}", charset);
 
         String path = config.getString("directory");
-        File directory = new File(path);
-        logger.info("directory: {}", directory.getAbsolutePath());
+        File directory = new File(path).getAbsoluteFile();
+        logger.info("directory: {}", directory);
 
         List<String> cmd = new ArrayList<>();
         cmd.add(config.getString("command"));
