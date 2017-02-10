@@ -10,6 +10,7 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
+import org.github.mitallast.taskflow.common.error.MaybeErrors;
 import org.github.mitallast.taskflow.common.json.JsonService;
 import org.github.mitallast.taskflow.common.path.PathTrie;
 import org.github.mitallast.taskflow.rest.netty.HttpRequest;
@@ -171,6 +172,10 @@ public class RestController extends AbstractComponent {
             return optional(json());
         }
 
+        public <T> BiConsumer<RestRequest, MaybeErrors<T>> maybeJson() {
+            return maybe(json());
+        }
+
         public BiConsumer<RestRequest, URL> url() {
             return (request, file) -> request.response().file(file);
         }
@@ -193,6 +198,18 @@ public class RestController extends AbstractComponent {
                     mapper.accept(request, optional.get());
                 } else {
                     empty.accept(request);
+                }
+            };
+        }
+
+        public <T> BiConsumer<RestRequest, MaybeErrors<T>> maybe(BiConsumer<RestRequest, T> mapper) {
+            return (request, maybeErrors) -> {
+                if (maybeErrors.valid()) {
+                    mapper.accept(request, maybeErrors.value());
+                } else {
+                    request.response()
+                        .status(HttpResponseStatus.NOT_ACCEPTABLE)
+                        .json(maybeErrors.errors());
                 }
             };
         }

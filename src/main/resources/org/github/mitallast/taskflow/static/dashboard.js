@@ -39,6 +39,10 @@
                 templateUrl: '/dag-run-state.html',
                 controller: 'DagRunIdCtrl'
             })
+            .when('/operations', {
+                templateUrl: '/operations.html',
+                controller: 'OperationsController'
+            })
             .otherwise({
                 redirectTo: '/'
             });
@@ -54,6 +58,9 @@
                 {href:'dag/run', title:'Dag run'},
                 {href:'dag/run/pending', title:'Dag run pending'},
                 {href:'dag/run/id/1', title:'Dag run 1'},
+            ],
+            [
+                {href:'operations', title:'Operations'},
             ]
         ];
         $scope.activeClass = function(page){
@@ -79,16 +86,24 @@
             $scope.dag = response.data;
         });
     })
-    .controller('DagCreateCtrl', function($scope, $http){
-        $scope.operations = [
-            "dummy",
-            "shell"
-        ];
+    .controller('DagCreateCtrl', function($scope, $http, $location){
         $scope.dag = {
            token: '',
            tasks: []
         };
         $scope.errors = false;
+        $scope.operations = [];
+        $scope.operationsMap = {};
+        $http.get('/api/operation')
+            .then(function(response){
+                $scope.operations = response.data.map(function(item) {
+                    return item.id;
+                });
+                $scope.operationsMap = response.data.reduce(function(map, item) {
+                    map[item.id] = item;
+                    return map;
+                }, {});
+            });
         $scope.addTask = function() {
             $scope.dag.tasks.push({
                 token: '',
@@ -113,16 +128,17 @@
         };
         $scope.createDag = function() {
             $http.put('/api/dag', $scope.dag)
-            .then(function(response){
-                console.log(response);
-            });
+            .then(
+                function(response){
+                    $location.path('/dag/update/id/' + response.data.id)
+                },
+                function(response){
+                    $scope.errors = response.data;
+                }
+            );
         };
     })
-    .controller('DagUpdateCtrl', function($scope, $http, $routeParams){
-        $scope.operations = [
-            "dummy",
-            "shell"
-        ];
+    .controller('DagUpdateCtrl', function($scope, $http, $location, $routeParams){
         $scope.addTask = function() {
             $scope.dag.tasks.push({
                 token: '',
@@ -134,6 +150,18 @@
                 }
             });
         };
+        $scope.operations = [];
+        $scope.operationsMap = {};
+        $http.get('/api/operation')
+            .then(function(response){
+                $scope.operations = response.data.map(function(item) {
+                    return item.id;
+                });
+                $scope.operationsMap = response.data.reduce(function(map, item) {
+                    map[item.id] = item;
+                    return map;
+                }, {});
+            });
         $scope.validateDag = function() {
             $http.put('/api/dag/validate', $scope.dag)
             .then(
@@ -147,14 +175,43 @@
         };
         $scope.updateDag = function() {
             $http.post('/api/dag', $scope.dag)
-            .then(function(response){
-                $scope.dag = response.data;
-            });
+            .then(
+                function(response){
+                    $location.path('/dag/update/id/' + response.data.id)
+                },
+                function(response){
+                    $scope.errors = response.data;
+                }
+            );
         };
         $http.get('/api/dag/id/' + $routeParams.id)
         .then(function(response){
             $scope.dag = response.data;
         });
+    })
+    .controller('CreateDagRunCtrl', function($scope, $http, $location){
+        $scope.createDagRunById = function(id){
+            $http.put('/api/dag/id/' + id + "/run")
+            .then(
+                function(response){
+                    $location.path('/dag/run/id/' + response.data.id)
+                },
+                function(response){
+                    $scope.errors = response.data;
+                }
+            )
+        };
+        $scope.createDagRunByToken = function(token){
+            $http.put('/api/dag/token/' + token + "/run")
+            .then(
+                function(response){
+                    $location.path('/dag/run/id/' + response.data.id)
+                },
+                function(response){
+                    $scope.errors = response.data;
+                }
+            )
+        };
     })
     .controller('DagRunCtrl', function($scope, $http){
         $http.get('/api/dag/run')
@@ -172,6 +229,13 @@
         $http.get('/api/dag/run/id/' + $routeParams.id)
         .then(function(response){
             $scope.dag_run = response.data;
+        });
+    })
+    .controller('OperationsController', function($scope, $http){
+        $scope.operations = [];
+        $http.get('/api/operation')
+        .then(function(response){
+            $scope.operations = response.data;
         });
     })
     .directive('jsonText', function() {

@@ -1,5 +1,6 @@
 package org.github.mitallast.taskflow.operation;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
@@ -28,8 +29,8 @@ public class OperationService extends AbstractComponent {
         return operationsMap.get(id);
     }
 
-    public ImmutableSet<String> operations() {
-        return operationsMap.keySet();
+    public ImmutableCollection<Operation> operations() {
+        return operationsMap.values();
     }
 
     public boolean contains(String id) {

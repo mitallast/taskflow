@@ -20,6 +20,7 @@ import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.common.error.Errors;
+import org.github.mitallast.taskflow.operation.Operation;
 import org.github.mitallast.taskflow.operation.OperationEnvironment;
 
 import java.io.IOError;
@@ -40,8 +41,9 @@ public class JsonService extends AbstractComponent {
         module.addSerializer(Config.class, new ConfigSerializer());
         module.addDeserializer(Config.class, new ConfigDeserializer());
         module.addSerializer(OperationEnvironment.class, new OperationEnvironmentSerializer());
-        module.addSerializer(Errors.class, new ErrorsSerializer());
         module.addDeserializer(OperationEnvironment.class, new OperationEnvironmentDeserializer());
+        module.addSerializer(Errors.class, new ErrorsSerializer());
+        module.addSerializer(Operation.class, new OperationSerializer());
 
         mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
@@ -168,6 +170,18 @@ public class JsonService extends AbstractComponent {
                 }
                 gen.writeEndObject();
             }
+        }
+    }
+
+    private static class OperationSerializer extends JsonSerializer<Operation> {
+
+        @Override
+        public void serialize(Operation value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeStartObject();
+            gen.writeStringField("id", value.id());
+            gen.writeFieldName("reference");
+            gen.writeObject(value.reference());
+            gen.writeEndObject();
         }
     }
 }

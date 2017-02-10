@@ -8,7 +8,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.stream.ChunkedNioFile;
 import io.netty.handler.stream.ChunkedStream;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
@@ -17,14 +17,18 @@ import org.apache.logging.log4j.Logger;
 import org.github.mitallast.taskflow.common.json.JsonService;
 import org.github.mitallast.taskflow.rest.ResponseBuilder;
 import org.github.mitallast.taskflow.rest.RestRequest;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 import javax.activation.MimetypesFileTypeMap;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.URLConnection;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
@@ -36,6 +40,11 @@ public class HttpRequest implements RestRequest {
     private static final AsciiString APPLICATION_JAVASCRIPT = new AsciiString("application/javascript");
     private static final AsciiString TEXT_CSS = new AsciiString("text/css");
     private static final AsciiString TEXT_HTML = new AsciiString("text/html");
+
+    private static final DateTimeFormatter dateFormat = DateTimeFormat
+        .forPattern("EEE, dd MMM yyyy HH:mm:ss Z")
+        .withLocale(Locale.US)
+        .withZoneUTC();
 
     private final ChannelHandlerContext ctx;
     private final FullHttpRequest httpRequest;
@@ -163,6 +172,13 @@ public class HttpRequest implements RestRequest {
         }
 
         @Override
+        public ResponseBuilder header(AsciiString name, long value) {
+            Preconditions.checkNotNull(name);
+            headers.add(name, value);
+            return this;
+        }
+
+        @Override
         public void error(Throwable error) {
             Preconditions.checkNotNull(error);
             ByteBuf buffer = ctx.alloc().buffer();
@@ -216,19 +232,66 @@ public class HttpRequest implements RestRequest {
 
         @Override
         public void file(URL url) {
-            final String path = url.getPath();
-            logger.info("path: {}", path);
-            final InputStream stream;
-            try {
-                stream = url.openStream();
-            } catch (IOException e) {
-                throw new IOError(e);
+            switch (url.getProtocol()) {
+                case "file":
+                    try {
+                        file(new File(url.toURI()));
+                    } catch (URISyntaxException e) {
+                        throw new IOError(e);
+                    }
+                case "jar":
+                    try {
+                        String path = new URI(url.getPath()).getPath();
+                        int bangIndex = path.indexOf('!');
+                        String filePath = path.substring(0, bangIndex);
+                        String resourcePath = path.substring(bangIndex + 2);
+
+                        ZipFile jar = new ZipFile(filePath);
+                        ZipEntry entry = jar.getEntry(resourcePath);
+
+                        long lastModified = entry.getTime();
+                        if (isModifiedSince(lastModified)) {
+                            sendNotModified();
+                        } else {
+                            InputStream stream = jar.getInputStream(entry);
+                            long contentLength = entry.getSize();
+                            file(resourcePath, contentLength, lastModified, stream);
+                        }
+                    } catch (IOException | URISyntaxException e) {
+                        throw new IOError(e);
+                    }
+                    break;
+                default:
+                    try {
+                        URLConnection conn = url.openConnection();
+                        // otherwise the JDK will keep the connection open when we close!
+                        conn.setUseCaches(false);
+
+                        long contentLength = conn.getContentLength();
+                        long lastModified = conn.getLastModified();
+                        InputStream stream = conn.getInputStream();
+
+                        if (isModifiedSince(lastModified)) {
+                            stream.close();
+                            sendNotModified();
+                        } else {
+                            file(url.getPath(), contentLength, lastModified, stream);
+                        }
+                    } catch (IOException e) {
+                        throw new IOError(e);
+                    }
             }
+        }
+
+        private void file(String path, long contentLength, long lastModified, InputStream stream) {
+            logger.info("path: {}", path);
 
             mimetype(path);
 
+            header(HttpHeaderNames.CONTENT_LENGTH, contentLength);
+            lastModified(lastModified);
+
             DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK, headers);
-            HttpUtil.setTransferEncodingChunked(response, true);
 
             if (HttpUtil.isKeepAlive(httpRequest)) {
                 HttpUtil.setKeepAlive(response, true);
@@ -242,23 +305,28 @@ public class HttpRequest implements RestRequest {
 
         @Override
         public void file(File file) {
+            long lastModified = file.lastModified();
+            if (isModifiedSince(lastModified)) {
+                sendNotModified();
+            } else {
+                mimetype(file.getPath());
+                lastModified(lastModified);
+                header(HttpHeaderNames.CONTENT_LENGTH, file.length());
+                DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK, headers);
 
-            mimetype(file.getPath());
-
-            DefaultHttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK, headers);
-            HttpUtil.setTransferEncodingChunked(response, true);
-
-            if (HttpUtil.isKeepAlive(httpRequest)) {
-                HttpUtil.setKeepAlive(response, true);
-            }
-            ctx.write(response);
-            try {
-                ChannelFuture write = ctx.writeAndFlush(new HttpChunkedInput(new ChunkedFile(file, 8192)));
-                if (!HttpUtil.isKeepAlive(httpRequest)) {
-                    write.addListener(ChannelFutureListener.CLOSE);
+                if (HttpUtil.isKeepAlive(httpRequest)) {
+                    HttpUtil.setKeepAlive(response, true);
                 }
-            } catch (IOException e) {
-                throw new IOError(e);
+                ctx.write(response);
+
+                try {
+                    ChannelFuture write = ctx.writeAndFlush(new HttpChunkedInput(new ChunkedNioFile(file)));
+                    if (!HttpUtil.isKeepAlive(httpRequest)) {
+                        write.addListener(ChannelFutureListener.CLOSE);
+                    }
+                } catch (IOException e) {
+                    throw new IOError(e);
+                }
             }
         }
 
@@ -283,6 +351,38 @@ public class HttpRequest implements RestRequest {
                 headers,
                 EmptyHttpHeaders.INSTANCE
             );
+            if (HttpUtil.isKeepAlive(httpRequest)) {
+                HttpUtil.setKeepAlive(response, true);
+            }
+            ChannelFuture write = ctx.writeAndFlush(response);
+            if (!HttpUtil.isKeepAlive(httpRequest)) {
+                write.addListener(ChannelFutureListener.CLOSE);
+            }
+        }
+
+        private void lastModified(long lastModified) {
+            header(HttpHeaderNames.LAST_MODIFIED, dateFormat.print(lastModified));
+        }
+
+        private boolean isModifiedSince(long lastModified) {
+            String ifModifiedSince = httpRequest.headers().get(HttpHeaderNames.IF_MODIFIED_SINCE);
+            if (ifModifiedSince != null && !ifModifiedSince.isEmpty()) {
+                try {
+                    long ifModifiedSinceSec = dateFormat.parseMillis(ifModifiedSince) / 1000;
+                    long lastModifiedSec = lastModified / 1000;
+                    return lastModifiedSec == ifModifiedSinceSec;
+                } catch (UnsupportedOperationException | IllegalArgumentException e) {
+                    logger.warn(e);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        private void sendNotModified() {
+            FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, HttpResponseStatus.NOT_MODIFIED);
+            response.headers().set(HttpHeaderNames.DATE, dateFormat.print(System.currentTimeMillis()));
+
             if (HttpUtil.isKeepAlive(httpRequest)) {
                 HttpUtil.setKeepAlive(response, true);
             }

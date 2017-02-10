@@ -411,6 +411,7 @@ public class DagPersistenceService extends AbstractComponent {
 
             ImmutableList.Builder<DagRun> dagRuns = ImmutableList.builder();
             context.selectFrom(table.dag_run)
+                .orderBy(field.id.desc())
                 .fetch()
                 .map(record -> dagRuns.add(dagRun(record, taskRunMap.computeIfAbsent(record.get(field.id), t -> new ImmutableList.Builder<>()).build())));
 
@@ -429,6 +430,7 @@ public class DagPersistenceService extends AbstractComponent {
             Map<Long, ImmutableList.Builder<TaskRun>> taskRunMap = new HashMap<>();
             context.selectFrom(table.task_run)
                 .where(field.dag_run_id.in(ids))
+                .orderBy(field.id.desc())
                 .fetch()
                 .forEach(record -> taskRunMap.computeIfAbsent(record.get(field.dag_run_id), t -> new ImmutableList.Builder<>()).add(taskRun(record)));
 
@@ -455,7 +457,7 @@ public class DagPersistenceService extends AbstractComponent {
                 .map(record -> {
                     ImmutableList.Builder<TaskRun> tasks = new ImmutableList.Builder<>();
                     context.selectFrom(table.task_run)
-                        .where(field.dag_id.eq(id))
+                        .where(field.dag_run_id.eq(id))
                         .fetch()
                         .forEach(t -> tasks.add(taskRun(t)));
                     return dagRun(record, tasks.build());

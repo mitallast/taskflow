@@ -19,6 +19,8 @@ public interface ResponseBuilder {
 
     ResponseBuilder header(AsciiString name, String value);
 
+    ResponseBuilder header(AsciiString name, long value);
+
     void error(Throwable throwable);
 
     void json(Object json);

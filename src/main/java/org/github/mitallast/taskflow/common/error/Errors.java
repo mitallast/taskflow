@@ -6,8 +6,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
-public class Errors {
+public final class Errors {
 
     private HashMap<String, String> errors;
     private HashMap<String, Errors> nested;
@@ -32,7 +33,8 @@ public class Errors {
         if (expression) {
             return this::error;
         } else {
-            return (key, message) -> {};
+            return (key, message) -> {
+            };
         }
     }
 
@@ -73,6 +75,14 @@ public class Errors {
     public boolean valid() {
         return (errors == null || errors.isEmpty())
             && (nested == null || nested.values().stream().map(Errors::valid).reduce(true, (a, b) -> a && b));
+    }
+
+    public <T> MaybeErrors<T> maybe(Supplier<T> supplier) {
+        if (valid()) {
+            return MaybeErrors.valid(supplier.get());
+        } else {
+            return MaybeErrors.nonValid(this);
+        }
     }
 
     @Override

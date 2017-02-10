@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.common.error.Errors;
+import org.github.mitallast.taskflow.common.error.MaybeErrors;
 import org.github.mitallast.taskflow.common.json.JsonService;
 import org.github.mitallast.taskflow.operation.OperationService;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
@@ -14,12 +15,14 @@ import org.jgrapht.graph.DefaultEdge;
 
 public class DagService extends AbstractComponent {
 
+    private final DagPersistenceService persistenceService;
     private final OperationService operationService;
     private final JsonService jsonService;
 
     @Inject
-    public DagService(Config config, OperationService operationService, JsonService jsonService) {
+    public DagService(Config config, DagPersistenceService persistenceService, OperationService operationService, JsonService jsonService) {
         super(config, DagService.class);
+        this.persistenceService = persistenceService;
         this.operationService = operationService;
         this.jsonService = jsonService;
     }
@@ -97,5 +100,13 @@ public class DagService extends AbstractComponent {
         }
 
         return builder;
+    }
+
+    public MaybeErrors<Dag> createDag(Dag dag) {
+        return validate(dag).maybe(() -> persistenceService.createDag(dag));
+    }
+
+    public MaybeErrors<Dag> updateDag(Dag dag) {
+        return validate(dag).maybe(() -> persistenceService.updateDag(dag));
     }
 }
