@@ -252,14 +252,19 @@
                     }
                 });
                 scope.render = function(dag_run) {
-                    var tasks = dag_run.tasks;
+                    var tasks = dag_run.tasks// .filter(function(d){ d.startDate; })
+                    if(tasks.length == 0) {
+                        return;
+                    }
 
-                    var barHeight = 50;
-                    var gap = barHeight + 4;
-                    var sidePadding = 75;
+                    var barHeight = 20;
+                    var padding = 4;
+                    var sidePadding = 20;
+                    var gap = barHeight + padding;
+                    var bottomPadding = 14;
 
                     var w = 800;
-                    var h = barHeight * tasks.length + sidePadding;
+                    var h = gap * tasks.length + padding * 2 + bottomPadding
 
                     var svg = d3.select(element[0])
                         .append("svg")
@@ -267,12 +272,19 @@
                         .attr("height", h)
                         .attr("class", "svg");
 
+                    var min = d3.min(tasks, function(d) { return new Date(d.startDate); }).getTime();
+                    var max = d3.max(tasks, function(d) { return parseFinishDate(d.finishDate); }).getTime();
+
+                    // in millis
+                    var duration = max - min;
+                    console.log(duration);
+
                     var timeScale = d3.scaleTime()
                         .domain([
-                            d3.min(tasks, function(d) { return new Date(d.startDate); }),
-                            d3.max(tasks, function(d) { return new Date(d.finishDate); })
+                            new Date(min - duration * 0.05),
+                            new Date(max + duration * 0.05)
                         ])
-                        .range([0, w]);
+                        .range([-2, w+2]);
 
                     var categories = tasks.map(function(t){ return t.id; })
 
@@ -284,15 +296,63 @@
                     makeGrid();
                     drawRects(tasks);
 
+                    function parseFinishDate(date) {
+                        if(date) {
+                            return new Date(date);
+                        }else{
+                            return new Date();
+                        }
+                    }
+
                     function makeGrid(){
+                        var sec = 1000;
+                        var minute = sec * 60;
+                        var hour = minute * 60;
+                        var day = hour * 24;
+                        var week = day * 7;
+                        var month = week * 4;
+                        var year = month * 4;
+
+                        var ticks;
+                        if(duration > year) {
+                            console.log("1 year");
+                            ticks = d3.timeYear.every(1);
+                        } else if(duration > month) {
+                            console.log("1 month");
+                            ticks = d3.timeMonth.every(1);
+                        } else if(duration > week) {
+                            console.log("1 w");
+                            ticks = d3.timeWeek.every(1);
+                        } else if(duration > day) {
+                            console.log("1 d");
+                            ticks = d3.timeDay.every(1);
+                        } else if(duration > hour) {
+                            console.log("1 h");
+                            ticks = d3.timeHour.every(1);
+                        } else if(duration > minute) {
+                            console.log("1 min");
+                            ticks = d3.timeMinute.every(1);
+                        } else if(duration > sec){
+                            if(duration > sec * 10) {
+                                console.log("10 s");
+                                ticks = d3.timeSecond.every(5);
+                            }else{
+                                console.log("1 s");
+                                ticks = d3.timeSecond.every(1);
+                            }
+                        } else {
+                            console.log("100 ms");
+                            ticks = d3.timeMilliseconds.every(100);
+                        }
+
                         var xAxis = d3.axisBottom(timeScale)
-                            //.ticks(1, "s")
-                            .tickSize(-h+20, 0, 0)
+                            .ticks(ticks)
+                            .tickSize(-h+padding, 0, 0)
                             .tickFormat(d3.timeFormat("%X"));
 
                         var grid = svg.append('g')
                             .attr('class', 'grid')
-                            .attr('transform', 'translate(0 , ' + (h - 50) + ')')
+                            .attr('transform', 'translate(0 , ' + (h - bottomPadding) + ')')
                             .call(xAxis)
                             .selectAll("text")
                                 .style("text-anchor", "middle")
@@ -316,8 +376,8 @@
                                 console.log(new Date(d.startDate))
                                 return timeScale(new Date(d.startDate));
                             })
-                            .attr("y", function(d, i){ return i*gap; })
-                            .attr("width", function(d){ return (timeScale(new Date(d.finishDate))-timeScale(new Date(d.startDate))); })
+                            .attr("y", function(d, i){ return i*gap + padding; })
+                            .attr("width", function(d){ return (timeScale(parseFinishDate(d.finishDate))-timeScale(new Date(d.startDate))); })
                             .attr("height", barHeight)
                             .attr("stroke", "none")
                             .attr("fill", function(d){
@@ -333,26 +393,15 @@
                                 return d.id;
                             })
                             .attr("x", function(d){
-                                return (timeScale(new Date(d.finishDate))-timeScale(new Date(d.startDate)))/2 + timeScale(new Date(d.startDate));
+                                return (timeScale(parseFinishDate(d.finishDate))-timeScale(new Date(d.startDate)))/2 + timeScale(new Date(d.startDate));
                             })
                             .attr("y", function(d, i){
-                                return i*gap + barHeight / 2 + 4;
+                                return i*gap + padding + barHeight / 2 + 4;
                             })
                             .attr("font-size", 11)
                             .attr("text-anchor", "middle")
                             .attr("text-height", barHeight)
                             .attr("fill", "#fff");
-                    }
-
-                    function getCounts(arr) {
-                        var i = arr.length, // var to loop over
-                        obj = {}; // obj to store results
-                        while (i) obj[arr[--i]] = (obj[arr[i]] || 0) + 1; // count occurrences
-                        return obj;
-                    }
-
-                    function getCount(word, arr) {
-                        return getCounts(arr)[word] || 0;
                     }
                 };
             }
@@ -364,11 +413,11 @@
             require: 'ngModel',
             link: function(scope, element, attr, ngModel) {
                 ngModel.$parsers.push(function(input) {
-                    try{
+                    try {
                         var json = JSON.parse(input);
                         ngModel.$setValidity('json', true);
                         return json;
-                    }catch(e){
+                    } catch(e) {
                         ngModel.$setValidity('json', false);
                         return undefined;
                     }

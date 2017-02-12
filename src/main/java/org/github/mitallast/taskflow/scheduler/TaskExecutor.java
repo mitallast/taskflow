@@ -27,7 +27,7 @@ public class TaskExecutor extends AbstractComponent {
         this.persistenceService = persistenceService;
         this.dagService = dagService;
         this.operationService = operationService;
-        this.executorService = Executors.newSingleThreadScheduledExecutor();
+        this.executorService = Executors.newCachedThreadPool();
     }
 
     public void schedule(TaskRun taskRun) {
@@ -67,9 +67,11 @@ public class TaskExecutor extends AbstractComponent {
             OperationResult operationResult = operation.run(task.command());
             switch (operationResult.status()) {
                 case SUCCESS:
+                    logger.info("operation success: {}", operationResult);
                     dagService.markTaskRunSuccess(taskRun, operationResult);
                     break;
                 case FAILED:
+                    logger.error("operation failed: {}", operationResult);
                     dagService.markTaskRunFailed(taskRun, operationResult);
                     break;
             }

@@ -78,3 +78,23 @@ body {
 .main .page-header {
   margin-top: 0;
 }
+
+.grid line {
+  stroke: #ddd;
+  stroke-width: 0.5px
+}
+
+.grid domain {
+
+}
+
+@media
+(-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+    .grid line {
+      stroke-width: 0.5px
+    }
+    .grid .domain {
+        stroke-width: 0.5px
+    }
+}
