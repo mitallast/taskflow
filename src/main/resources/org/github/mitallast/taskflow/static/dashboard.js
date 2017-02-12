@@ -252,7 +252,7 @@
                     }
                 });
                 scope.render = function(dag_run) {
-                    var tasks = dag_run.tasks// .filter(function(d){ d.startDate; })
+                    var tasks = dag_run.tasks.filter(function(d){ return d.startDate; })
                     if(tasks.length == 0) {
                         return;
                     }

@@ -1,26 +1,35 @@
 package org.github.mitallast.taskflow.scheduler;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
+import org.github.mitallast.taskflow.common.Immutable;
 import org.github.mitallast.taskflow.dag.*;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
 import org.jgrapht.graph.DefaultEdge;
 
-import java.util.ArrayList;
-
+import static org.github.mitallast.taskflow.common.Immutable.*;
 import static org.github.mitallast.taskflow.dag.TaskRunStatus.*;
+
 
 public final class DagRunState {
 
     private final Dag dag;
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final DagRun dagRun;
 
     // task token => task
     private final ImmutableMap<String, Task> tokenTaskMap;
-    // task id => [task run]
+    // task id => task
+    private final ImmutableMap<Long, Task> idTaskMap;
+
+    // task id => list of task run
+    @SuppressWarnings({"FieldCanBeLocal", "unused"})
     private final ImmutableListMultimap<Long, TaskRun> idTaskRunMap;
+    // task id => last task run
+    private final ImmutableMap<Long, TaskRun> idTaskRunLatestMap;
 
     public DagRunState(Dag dag, DagRun dagRun) {
         Preconditions.checkNotNull(dag);
@@ -30,10 +39,11 @@ public final class DagRunState {
         this.dag = dag;
         this.dagRun = dagRun;
 
-        ImmutableMap<Long, Task> idTaskMap = buildIdTaskMap();
+        idTaskMap = group(dag.tasks(), Task::id);
+        tokenTaskMap = group(dag.tasks(), Task::token);
 
-        tokenTaskMap = buildTokenTaskMap();
-        idTaskRunMap = buildIdTaskRunMap();
+        idTaskRunMap = groupSorted(dagRun.tasks(), TaskRun::taskId);
+        idTaskRunLatestMap = reduce(idTaskRunMap, Immutable::last);
 
         buildTaskDag();
 
@@ -52,6 +62,7 @@ public final class DagRunState {
                 if (lastRun != null) {
                     Preconditions.checkArgument(lastRun.status() != PENDING, "Prev task run in pending state");
                     Preconditions.checkArgument(lastRun.status() != RUNNING, "Prev task run in running state");
+                    Preconditions.checkArgument(lastRun.status() != CANCELED, "Prev task run in canceled state");
                     Preconditions.checkNotNull(lastRun.finishDate());
                     if (taskRun.status() != PENDING) {
                         Preconditions.checkNotNull(taskRun.startDate());
@@ -61,27 +72,41 @@ public final class DagRunState {
                 lastRun = taskRun;
             }
             Preconditions.checkNotNull(lastRun, "No run found for task " + id);
-            Preconditions.checkArgument(lastRun.status() != FAILED);
-            Preconditions.checkArgument(lastRun.status() != CANCELED);
         }
     }
 
-    public DagRunStatus dagRunDependsStatus() {
-        TaskRunStatus taskRunStatus = taskRunDependsStatus(dag.tasks());
-        switch (taskRunStatus) {
-            case PENDING:
-                return DagRunStatus.PENDING;
-            case RUNNING:
-                return DagRunStatus.PENDING;
-            case SUCCESS:
-                return DagRunStatus.SUCCESS;
-            default:
-                throw new IllegalStateException("Illegal task run state: " + taskRunStatus);
+    public ImmutableCollection<TaskRun> lastTaskRuns() {
+        return idTaskRunLatestMap.values();
+    }
+
+    public boolean hasLastRunCanceled() {
+        for (TaskRun taskRun : idTaskRunLatestMap.values()) {
+            if (taskRun.status() == CANCELED) {
+                return true;
+            }
         }
+        return false;
+    }
+
+    public boolean hasUnfinished() {
+        for (TaskRun taskRun : idTaskRunLatestMap.values()) {
+            if (taskRun.status() == PENDING) {
+                return true;
+            }
+            if (taskRun.status() == RUNNING) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public TaskRunStatus taskRunDependsStatus(TaskRun taskRun) {
+        Task task = idTaskMap.get(taskRun.taskId());
+        return taskRunDependsStatus(task);
     }
 
     public TaskRunStatus taskRunDependsStatus(Task task) {
-        ImmutableList<Task> depends = buildDepends(task);
+        ImmutableList<Task> depends = depends(task);
         return taskRunDependsStatus(depends);
     }
 
@@ -117,11 +142,15 @@ public final class DagRunState {
     }
 
     public TaskRun taskRun(Task task) {
-        ImmutableList<TaskRun> taskRuns = idTaskRunMap.get(task.id());
-        return taskRuns.get(taskRuns.size() - 1);
+        return idTaskRunLatestMap.get(task.id());
     }
 
-    private ImmutableList<Task> buildDepends(Task task) {
+    public ImmutableList<Task> depends(TaskRun taskRun) {
+        Task task = idTaskMap.get(taskRun.taskId());
+        return depends(task);
+    }
+
+    public ImmutableList<Task> depends(Task task) {
         ImmutableList.Builder<Task> builder = ImmutableList.builder();
         for (String dependsToken : task.depends()) {
             builder.add(tokenTaskMap.get(dependsToken));
@@ -140,37 +169,5 @@ public final class DagRunState {
             }
         }
         return graph;
-    }
-
-    private ImmutableMap<Long, Task> buildIdTaskMap() {
-        ImmutableMap.Builder<Long, Task> builder = ImmutableMap.builder();
-        for (Task task : dag.tasks()) {
-            builder.put(task.id(), task);
-        }
-        return builder.build();
-    }
-
-    private ImmutableListMultimap<Long, TaskRun> buildIdTaskRunMap() {
-        ImmutableListMultimap.Builder<Long, TaskRun> unsortedBuilder = ImmutableListMultimap.builder();
-        for (TaskRun task : dagRun.tasks()) {
-            unsortedBuilder.put(task.taskId(), task);
-        }
-        ImmutableListMultimap<Long, TaskRun> unsorted = unsortedBuilder.build();
-        ImmutableListMultimap.Builder<Long, TaskRun> sortedBuilder = ImmutableListMultimap.builder();
-        for (Long id : unsorted.keySet()) {
-            ArrayList<TaskRun> list = new ArrayList<>(unsorted.get(id));
-            // reverse order
-            list.sort((l, r) -> Long.compare(r.taskId(), l.taskId()));
-            sortedBuilder.putAll(id, list);
-        }
-        return sortedBuilder.build();
-    }
-
-    private ImmutableMap<String, Task> buildTokenTaskMap() {
-        ImmutableMap.Builder<String, Task> builder = ImmutableMap.builder();
-        for (Task task : dag.tasks()) {
-            builder.put(task.token(), task);
-        }
-        return builder.build();
     }
 }

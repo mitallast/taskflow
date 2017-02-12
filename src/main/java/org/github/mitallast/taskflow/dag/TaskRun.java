@@ -3,7 +3,7 @@ package org.github.mitallast.taskflow.dag;
 import org.github.mitallast.taskflow.operation.OperationResult;
 import org.joda.time.DateTime;
 
-public class TaskRun {
+public class TaskRun implements Comparable<TaskRun> {
     private final long id;
     private final long dagId;
     private final long taskId;
@@ -60,5 +60,10 @@ public class TaskRun {
 
     public OperationResult operationResult() {
         return operationResult;
+    }
+
+    @Override
+    public int compareTo(TaskRun other) {
+        return Long.compare(this.id, other.id);
     }
 }

@@ -43,7 +43,7 @@ public class TaskExecutor extends AbstractComponent {
         Optional<Dag> dagOpt = persistenceService.findDagById(taskRun.dagId());
         if (!dagOpt.isPresent()) {
             logger.warn("dag not found: {}", taskRun);
-            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, null, "dag not found"));
+            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, "", "dag not found"));
             return;
         }
         Dag dag = dagOpt.get();
@@ -51,7 +51,7 @@ public class TaskExecutor extends AbstractComponent {
         Optional<Task> taskOpt = dag.tasks().stream().filter(task -> task.id() == taskRun.taskId()).findFirst();
         if (!taskOpt.isPresent()) {
             logger.warn("task not found: {}", taskRun);
-            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, null, "task not found"));
+            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, "", "task not found"));
             return;
         }
         Task task = taskOpt.get();
@@ -59,7 +59,7 @@ public class TaskExecutor extends AbstractComponent {
         Operation operation = operationService.operation(task.operation());
         if (operation == null) {
             logger.warn("operation not found: {}", taskRun);
-            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, null, "operation not found"));
+            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, "", "operation not found"));
             return;
         }
 
@@ -77,7 +77,7 @@ public class TaskExecutor extends AbstractComponent {
             }
         } catch (IOException e) {
             logger.warn("error on running task: {}", task, e);
-            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, null, e.toString()));
+            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, "", e.toString()));
         }
     }
 }

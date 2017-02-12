@@ -87,81 +87,81 @@ public class DagPersistenceService extends AbstractComponent {
         this.persistence = persistence;
         this.jsonService = jsonService;
 
-        if(false)
-        try (DSLContext context = persistence.context()) {
+        if (false)
+            try (DSLContext context = persistence.context()) {
 
-            context.dropTableIfExists(table.task_run).execute();
-            context.dropTableIfExists(table.dag_run).execute();
-            context.dropTableIfExists(table.task).execute();
-            context.dropTableIfExists(table.dag).execute();
+                context.dropTableIfExists(table.task_run).execute();
+                context.dropTableIfExists(table.dag_run).execute();
+                context.dropTableIfExists(table.task).execute();
+                context.dropTableIfExists(table.dag).execute();
 
-            context.dropSequenceIfExists(sequence.dag_seq).execute();
-            context.dropSequenceIfExists(sequence.task_seq).execute();
-            context.dropSequenceIfExists(sequence.dag_run_seq).execute();
-            context.dropSequenceIfExists(sequence.task_run_seq).execute();
+                context.dropSequenceIfExists(sequence.dag_seq).execute();
+                context.dropSequenceIfExists(sequence.task_seq).execute();
+                context.dropSequenceIfExists(sequence.dag_run_seq).execute();
+                context.dropSequenceIfExists(sequence.task_run_seq).execute();
 
-            context.createSequenceIfNotExists(sequence.dag_seq).execute();
-            context.createSequenceIfNotExists(sequence.task_seq).execute();
-            context.createSequenceIfNotExists(sequence.dag_run_seq).execute();
-            context.createSequenceIfNotExists(sequence.task_run_seq).execute();
+                context.createSequenceIfNotExists(sequence.dag_seq).execute();
+                context.createSequenceIfNotExists(sequence.task_seq).execute();
+                context.createSequenceIfNotExists(sequence.dag_run_seq).execute();
+                context.createSequenceIfNotExists(sequence.task_run_seq).execute();
 
-            context.createTableIfNotExists(table.dag)
-                .column(field.id)
-                .column(field.version)
-                .column(field.token)
-                .column(field.latest)
-                .constraint(constraint().primaryKey(field.id))
-                .constraint(constraint("dag_version").unique(field.token, field.version))
-                .execute();
+                context.createTableIfNotExists(table.dag)
+                    .column(field.id)
+                    .column(field.version)
+                    .column(field.token)
+                    .column(field.latest)
+                    .constraint(constraint().primaryKey(field.id))
+                    .constraint(constraint("dag_version").unique(field.token, field.version))
+                    .execute();
 
-            context.createUniqueIndex("dag_token_version_latest")
-                .on(table.dag, field.token, field.latest)
-                .where(field.latest.isTrue())
-                .execute();
+                context.createUniqueIndex("dag_token_version_latest")
+                    .on(table.dag, field.token, field.latest)
+                    .where(field.latest.isTrue())
+                    .execute();
 
-            context.createTableIfNotExists(table.task)
-                .column(field.id)
-                .column(field.version)
-                .column(field.token)
-                .column(field.dag_id)
-                .column(field.depends)
-                .column(field.operation)
-                .column(field.operation_config)
-                .column(field.operation_environment)
-                .constraint(constraint().primaryKey(field.id))
-                .constraint(constraint("dag_task_version").unique(field.dag_id, field.token, field.version))
-                .constraint(constraint("task_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
-                .execute();
+                context.createTableIfNotExists(table.task)
+                    .column(field.id)
+                    .column(field.version)
+                    .column(field.token)
+                    .column(field.dag_id)
+                    .column(field.depends)
+                    .column(field.operation)
+                    .column(field.operation_config)
+                    .column(field.operation_environment)
+                    .constraint(constraint().primaryKey(field.id))
+                    .constraint(constraint("dag_task_version").unique(field.dag_id, field.token, field.version))
+                    .constraint(constraint("task_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
+                    .execute();
 
-            context.createTableIfNotExists(table.dag_run)
-                .column(field.id)
-                .column(field.dag_id)
-                .column(field.created_date)
-                .column(field.start_date)
-                .column(field.finish_date)
-                .column(field.status)
-                .constraint(constraint().primaryKey(field.id))
-                .constraint(constraint("dag_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
-                .execute();
+                context.createTableIfNotExists(table.dag_run)
+                    .column(field.id)
+                    .column(field.dag_id)
+                    .column(field.created_date)
+                    .column(field.start_date)
+                    .column(field.finish_date)
+                    .column(field.status)
+                    .constraint(constraint().primaryKey(field.id))
+                    .constraint(constraint("dag_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
+                    .execute();
 
-            context.createTableIfNotExists(table.task_run)
-                .column(field.id)
-                .column(field.dag_id)
-                .column(field.task_id)
-                .column(field.dag_run_id)
-                .column(field.created_date)
-                .column(field.start_date)
-                .column(field.finish_date)
-                .column(field.status)
-                .column(field.operation_status)
-                .column(field.operation_stdout)
-                .column(field.operation_stderr)
-                .constraint(constraint().primaryKey(field.id))
-                .constraint(constraint("task_run_fk_dag_run").foreignKey(field.dag_run_id).references(table.dag_run, field.id))
-                .constraint(constraint("task_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
-                .constraint(constraint("task_run_fk_task").foreignKey(field.task_id).references(table.task, field.id))
-                .execute();
-        }
+                context.createTableIfNotExists(table.task_run)
+                    .column(field.id)
+                    .column(field.dag_id)
+                    .column(field.task_id)
+                    .column(field.dag_run_id)
+                    .column(field.created_date)
+                    .column(field.start_date)
+                    .column(field.finish_date)
+                    .column(field.status)
+                    .column(field.operation_status)
+                    .column(field.operation_stdout)
+                    .column(field.operation_stderr)
+                    .constraint(constraint().primaryKey(field.id))
+                    .constraint(constraint("task_run_fk_dag_run").foreignKey(field.dag_run_id).references(table.dag_run, field.id))
+                    .constraint(constraint("task_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
+                    .constraint(constraint("task_run_fk_task").foreignKey(field.task_id).references(table.task, field.id))
+                    .execute();
+            }
     }
 
     /**
@@ -423,7 +423,7 @@ public class DagPersistenceService extends AbstractComponent {
     public ImmutableList<DagRun> findPendingDagRuns() {
         try (DSLContext context = persistence.context()) {
             List<DagRun> dagRunList = context.selectFrom(table.dag_run)
-                .where(field.status.eq(DagRunStatus.PENDING.name()))
+                .where(field.status.in(DagRunStatus.PENDING.name(), DagRunStatus.RUNNING.name()))
                 .fetch()
                 .map(record -> dagRun(record, ImmutableList.of()));
 
@@ -526,6 +526,52 @@ public class DagPersistenceService extends AbstractComponent {
 
                 logger.info("updated {} rows", updated);
                 return updated == 1;
+            });
+        }
+    }
+
+    public TaskRun retry(TaskRun taskRun) {
+        try (DSLContext tr = persistence.context()) {
+            return tr.transactionResult(conf -> {
+                logger.info("retry task run", taskRun.dagRunId(), taskRun.taskId());
+
+                DateTime createdDate = DateTime.now();
+                Timestamp created = new Timestamp(createdDate.getMillis());
+
+                long taskRunId = DSL.using(conf)
+                    .insertInto(
+                        table.task_run,
+                        field.id,
+                        field.dag_id,
+                        field.task_id,
+                        field.dag_run_id,
+                        field.created_date,
+                        field.status
+                    )
+                    .values(
+                        sequence.task_run_seq.nextval(),
+                        val(taskRun.dagId()),
+                        val(taskRun.taskId()),
+                        val(taskRun.dagRunId()),
+                        val(created),
+                        val(TaskRunStatus.PENDING.name())
+                    )
+                    .returning(field.id)
+                    .fetchOptional()
+                    .orElseThrow(IllegalStateException::new)
+                    .get(field.id);
+
+                return new TaskRun(
+                    taskRunId,
+                    taskRun.dagId(),
+                    taskRun.taskId(),
+                    taskRun.dagRunId(),
+                    createdDate,
+                    null,
+                    null,
+                    TaskRunStatus.PENDING,
+                    null
+                );
             });
         }
     }
