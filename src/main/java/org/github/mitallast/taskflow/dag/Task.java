@@ -52,6 +52,10 @@ public class Task {
         return depends;
     }
 
+    public Task depend(String... tokens) {
+        return new Task(id, version, token, ImmutableSet.<String>builder().addAll(depends).add(tokens).build(), operation, command);
+    }
+
     public String operation() {
         return operation;
     }

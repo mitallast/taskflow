@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public final class Immutable {
     private Immutable() {
@@ -81,5 +82,23 @@ public final class Immutable {
     public static <T> T last(ImmutableCollection<T> values) {
         Preconditions.checkArgument(!values.isEmpty(), "Cannot be empty");
         return values.asList().get(values.size() - 1);
+    }
+
+    public static <T> ImmutableList<T> replace(ImmutableList<T> list, Predicate<T> match, T value) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        for (T t : list) {
+            if (match.test(t)) {
+                builder.add(value);
+            } else {
+                builder.add(t);
+            }
+        }
+        return builder.build();
+    }
+
+    public static <T> ImmutableList<T> append(ImmutableList<T> list, T... values) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        builder.addAll(list).add(values);
+        return builder.build();
     }
 }

@@ -12,22 +12,28 @@ import org.github.mitallast.taskflow.common.error.MaybeErrors;
 import org.github.mitallast.taskflow.common.json.JsonService;
 import org.github.mitallast.taskflow.operation.OperationResult;
 import org.github.mitallast.taskflow.operation.OperationService;
-import org.github.mitallast.taskflow.scheduler.DagScheduler;
+import org.github.mitallast.taskflow.scheduler.DagRunExecutor;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
 import org.jgrapht.graph.DefaultEdge;
 
 public class DefaultDagService extends AbstractComponent implements DagService {
 
     private final DagPersistenceService persistenceService;
-    private final DagScheduler dagScheduler;
+    private final DagRunExecutor dagRunExecutor;
     private final OperationService operationService;
     private final JsonService jsonService;
 
     @Inject
-    public DefaultDagService(Config config, DagPersistenceService persistenceService, DagScheduler dagScheduler, OperationService operationService, JsonService jsonService) {
+    public DefaultDagService(
+        Config config,
+        DagPersistenceService persistenceService,
+        DagRunExecutor dagRunExecutor,
+        OperationService operationService,
+        JsonService jsonService
+    ) {
         super(config, DagService.class);
         this.persistenceService = persistenceService;
-        this.dagScheduler = dagScheduler;
+        this.dagRunExecutor = dagRunExecutor;
         this.operationService = operationService;
         this.jsonService = jsonService;
     }
@@ -121,24 +127,14 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     public DagRun createDagRun(Dag dag) {
         Preconditions.checkNotNull(dag);
         DagRun dagRun = persistenceService.createDagRun(dag);
-        dagScheduler.schedule(dagRun.id());
+        dagRunExecutor.schedule(dagRun.id());
         return dagRun;
-    }
-
-    @Override
-    public boolean startTaskRun(TaskRun taskRun) {
-        if (persistenceService.startTaskRun(taskRun.id())) {
-            dagScheduler.schedule(taskRun.dagRunId());
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
     public boolean markTaskRunSuccess(TaskRun taskRun, OperationResult operationResult) {
         if (persistenceService.markTaskRunSuccess(taskRun.id(), operationResult)) {
-            dagScheduler.schedule(taskRun.dagRunId());
+            dagRunExecutor.schedule(taskRun.dagRunId());
             return true;
         } else {
             return false;
@@ -148,17 +144,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     @Override
     public boolean markTaskRunFailed(TaskRun taskRun, OperationResult operationResult) {
         if (persistenceService.markTaskRunFailed(taskRun.id(), operationResult)) {
-            dagScheduler.schedule(taskRun.dagRunId());
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public boolean markTaskRunCanceled(TaskRun taskRun) {
-        if (persistenceService.markTaskRunCanceled(taskRun.id())) {
-            dagScheduler.schedule(taskRun.dagRunId());
+            dagRunExecutor.schedule(taskRun.dagRunId());
             return true;
         } else {
             return false;

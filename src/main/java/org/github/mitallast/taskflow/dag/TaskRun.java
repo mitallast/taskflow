@@ -1,5 +1,6 @@
 package org.github.mitallast.taskflow.dag;
 
+import com.google.common.base.Preconditions;
 import org.github.mitallast.taskflow.operation.OperationResult;
 import org.joda.time.DateTime;
 
@@ -65,5 +66,34 @@ public class TaskRun implements Comparable<TaskRun> {
     @Override
     public int compareTo(TaskRun other) {
         return Long.compare(this.id, other.id);
+    }
+
+    public TaskRun start() {
+        Preconditions.checkArgument(status == TaskRunStatus.PENDING);
+        Preconditions.checkArgument(startDate == null);
+        Preconditions.checkArgument(finishDate == null);
+        Preconditions.checkArgument(operationResult == null);
+        return new TaskRun(id, dagId, taskId, dagRunId, createdDate, new DateTime(), null, TaskRunStatus.RUNNING, null);
+    }
+
+    public TaskRun success() {
+        Preconditions.checkArgument(status == TaskRunStatus.RUNNING);
+        Preconditions.checkNotNull(startDate);
+        Preconditions.checkArgument(finishDate == null);
+        return new TaskRun(id, dagId, taskId, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.SUCCESS, operationResult);
+    }
+
+    public TaskRun failure() {
+        Preconditions.checkArgument(status == TaskRunStatus.RUNNING);
+        Preconditions.checkNotNull(startDate);
+        Preconditions.checkArgument(finishDate == null);
+        return new TaskRun(id, dagId, taskId, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.FAILED, operationResult);
+    }
+
+    public TaskRun cancel() {
+        Preconditions.checkArgument(status == TaskRunStatus.RUNNING);
+        Preconditions.checkNotNull(startDate);
+        Preconditions.checkArgument(finishDate == null);
+        return new TaskRun(id, dagId, taskId, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.CANCELED, operationResult);
     }
 }

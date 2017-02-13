@@ -51,7 +51,6 @@ public final class DagRunState {
             Preconditions.checkArgument(idTaskRunMap.containsKey(task.id()), "Task " + task.id() + "does not contain runs");
         }
         for (TaskRun taskRun : dagRun.tasks()) {
-            Preconditions.checkArgument(taskRun.status() != CANCELED, "Task run " + taskRun.id() + "canceled ");
             Preconditions.checkArgument(idTaskMap.containsKey(taskRun.taskId()), "task runs illegal references to task " + taskRun.id());
         }
         // validate task run state - only one running|pending per task
@@ -66,7 +65,7 @@ public final class DagRunState {
                     Preconditions.checkNotNull(lastRun.finishDate());
                     if (taskRun.status() != PENDING) {
                         Preconditions.checkNotNull(taskRun.startDate());
-                        Preconditions.checkArgument(lastRun.finishDate().compareTo(taskRun.startDate()) < 0, "Task run time conflict found");
+                        Preconditions.checkArgument(lastRun.finishDate().compareTo(taskRun.startDate()) <= 0, "Task run time conflict found");
                     }
                 }
                 lastRun = taskRun;

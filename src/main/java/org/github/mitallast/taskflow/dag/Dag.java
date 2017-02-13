@@ -2,7 +2,10 @@ package org.github.mitallast.taskflow.dag;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+
+import static org.github.mitallast.taskflow.common.Immutable.replace;
 
 /**
  * Directed Acyclic Graph of tasks
@@ -48,6 +51,12 @@ public class Dag {
 
     public ImmutableList<Task> tasks() {
         return tasks;
+    }
+
+    public Dag update(Task task) {
+        Preconditions.checkNotNull(task);
+        Preconditions.checkArgument(tasks.stream().anyMatch(t -> t.id() == task.id()));
+        return new Dag(id, version, token, replace(tasks, t -> t.id() == task.id(), task));
     }
 
     @Override

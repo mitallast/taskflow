@@ -5,7 +5,8 @@ import com.google.inject.AbstractModule;
 public class SchedulerModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(DagScheduler.class).asEagerSingleton();
-        bind(TaskExecutor.class).asEagerSingleton();
+        bind(DagRunScheduler.class).asEagerSingleton();
+        bind(DagRunExecutor.class).asEagerSingleton();
+        bind(TaskRunExecutor.class).asEagerSingleton();
     }
 }

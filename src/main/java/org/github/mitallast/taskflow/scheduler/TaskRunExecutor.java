@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class TaskExecutor extends AbstractComponent {
+public class TaskRunExecutor extends AbstractComponent {
 
     private final DagPersistenceService persistenceService;
     private final DagService dagService;
@@ -22,8 +22,8 @@ public class TaskExecutor extends AbstractComponent {
     private final ExecutorService executorService;
 
     @Inject
-    public TaskExecutor(Config config, DagPersistenceService persistenceService, DagService dagService, OperationService operationService) {
-        super(config, TaskExecutor.class);
+    public TaskRunExecutor(Config config, DagPersistenceService persistenceService, DagService dagService, OperationService operationService) {
+        super(config, TaskRunExecutor.class);
         this.persistenceService = persistenceService;
         this.dagService = dagService;
         this.operationService = operationService;
@@ -35,11 +35,6 @@ public class TaskExecutor extends AbstractComponent {
     }
 
     private void execute(TaskRun taskRun) {
-        if (!dagService.startTaskRun(taskRun)) {
-            logger.warn("failed start task: {}", taskRun);
-            return;
-        }
-
         Optional<Dag> dagOpt = persistenceService.findDagById(taskRun.dagId());
         if (!dagOpt.isPresent()) {
             logger.warn("dag not found: {}", taskRun);
