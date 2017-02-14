@@ -33,7 +33,7 @@ public class ShellOperation extends AbstractComponent implements Operation {
     }
 
     @Override
-    public OperationResult run(OperationCommand command) throws IOException {
+    public OperationResult run(OperationCommand command) throws IOException, InterruptedException {
 
         Config config = command.config().withFallback(reference());
 
@@ -57,14 +57,26 @@ public class ShellOperation extends AbstractComponent implements Operation {
         try {
             Process process = builder.start();
 
-            boolean exited = process.waitFor(timeout, TimeUnit.MILLISECONDS);
-            final int exitValue;
-            if (exited) {
-                exitValue = process.exitValue();
-            } else {
-                process.destroy();
-                exitValue = process.waitFor();
+            boolean exited = false;
+            InterruptedException interruptedException = null;
+            while (!exited) {
+                try {
+                    exited = process.waitFor(timeout, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    interruptedException = e;
+                    Thread.currentThread().interrupt();
+                }
+                if (!exited) {
+                    logger.warn("process does not exited, kill");
+                    process.destroyForcibly();
+                }
             }
+
+            if (interruptedException != null) {
+                throw interruptedException;
+            }
+
+            int exitValue = process.exitValue();
 
             String stdout = IOUtils.toString(process.getInputStream(), charset);
             String stderr = IOUtils.toString(process.getErrorStream(), charset);
@@ -80,9 +92,6 @@ public class ShellOperation extends AbstractComponent implements Operation {
                 "",
                 e.getMessage()
             );
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new RuntimeException(e.getCause());
         }
     }
 }

@@ -228,10 +228,21 @@
         });
     })
     .controller('DagRunIdCtrl', function($scope, $http, $routeParams){
-        $http.get('/api/dag/run/id/' + $routeParams.id)
-        .then(function(response){
-            $scope.dag_run = response.data;
-        });
+        $scope.cancelable = false;
+        $scope.cancelDagRun = function() {
+            $http.post('/api/dag/run/id/' + $routeParams.id + '/cancel')
+            .then(function(response){
+                $scope.load();
+            });
+        };
+        $scope.load = function() {
+            $http.get('/api/dag/run/id/' + $routeParams.id)
+            .then(function(response){
+                $scope.dag_run = response.data;
+                $scope.cancelable = $scope.dag_run.status == "PENDING" || $scope.dag_run.status == "RUNNING";
+            });
+        };
+        $scope.load();
     })
     .controller('OperationsController', function($scope, $http){
         $scope.operations = [];
@@ -252,6 +263,7 @@
                     }
                 });
                 scope.render = function(dag_run) {
+                    element[0].innerHTML = '';
                     var tasks = dag_run.tasks.filter(function(d){ return d.startDate; })
                     if(tasks.length == 0) {
                         return;

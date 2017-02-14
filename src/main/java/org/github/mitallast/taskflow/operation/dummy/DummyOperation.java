@@ -28,7 +28,7 @@ public class DummyOperation extends AbstractComponent implements Operation {
     }
 
     @Override
-    public OperationResult run(OperationCommand command) throws IOException {
+    public OperationResult run(OperationCommand command) throws IOException, InterruptedException {
         Config config = command.config().withFallback(reference());
 
         if (config.getString("status").equalsIgnoreCase("success")) {

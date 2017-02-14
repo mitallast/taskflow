@@ -300,6 +300,10 @@
 <script type="text/ng-template" id="/dag-run-state.html">
     <h2 class="page-header">DAG run state</h2>
 
+    <p ng-show="cancelable">
+        <button ng-click="cancelDagRun()" type="button" class="btn btn-danger">Cancel</button>
+    </p>
+
     <p>id: {{dag_run.id}}</p>
 
     <p>dag_id: {{dag_run.dagId}}</p>

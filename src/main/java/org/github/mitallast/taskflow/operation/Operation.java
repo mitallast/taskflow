@@ -15,5 +15,5 @@ public interface Operation {
 
     Config reference();
 
-    OperationResult run(OperationCommand command) throws IOException;
+    OperationResult run(OperationCommand command) throws IOException, InterruptedException;
 }

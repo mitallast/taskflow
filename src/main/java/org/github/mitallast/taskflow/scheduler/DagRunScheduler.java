@@ -24,22 +24,18 @@ public class DagRunScheduler {
                 if (dagRunState.hasLastRunCanceled()) {
                     logger.warn("found canceled tasks");
 
-                    boolean hasRunning = false;
                     for (TaskRun taskRun : dagRun.tasks()) {
                         logger.info("task run {} status {}", taskRun.id(), taskRun.status());
 
                         if (taskRun.status() == TaskRunStatus.PENDING) {
-                            logger.warn("cancel pending task: {}", taskRun.id());
+                            logger.warn("cancel pending task run {}", taskRun.id());
                             return new CancelTaskRunCommand(taskRun);
                         }
 
                         if (taskRun.status() == TaskRunStatus.RUNNING) {
-                            hasRunning = true;
-                            logger.info("await task run {}", taskRun.id());
+                            logger.info("cancel running task run {}", taskRun.id());
+                            return new CancelTaskRunCommand(taskRun);
                         }
-                    }
-                    if (hasRunning) {
-                        return new AwaitCommand(dagRun);
                     }
                     logger.warn("cancel dag: {}", dagRun.id());
                     return new CancelDagRunCommand(dagRun);

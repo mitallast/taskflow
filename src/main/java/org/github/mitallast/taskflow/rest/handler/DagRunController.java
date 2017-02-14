@@ -5,11 +5,20 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.github.mitallast.taskflow.dag.DagPersistenceService;
 import org.github.mitallast.taskflow.rest.RestController;
+import org.github.mitallast.taskflow.scheduler.DagRunExecutor;
 
 public class DagRunController {
 
+    private final DagRunExecutor dagRunExecutor;
+
     @Inject
-    public DagRunController(RestController controller, DagPersistenceService persistenceService) {
+    public DagRunController(
+        RestController controller,
+        DagPersistenceService persistenceService,
+        DagRunExecutor dagRunExecutor
+    ) {
+        this.dagRunExecutor = dagRunExecutor;
+
         controller.handler(persistenceService::findDagRuns)
             .response(controller.response().json())
             .handle(HttpMethod.GET, "api/dag/run");
@@ -26,17 +35,22 @@ public class DagRunController {
         controller.handler(persistenceService::startDagRun)
             .param1(controller.param().toLong("id"))
             .response((request, result) -> {
-                if (result) request.response().status(HttpResponseStatus.ACCEPTED).empty();
+                if (result) request.response().status(HttpResponseStatus.NO_CONTENT).empty();
                 else request.response().status(HttpResponseStatus.METHOD_NOT_ALLOWED).empty();
             })
             .handle(HttpMethod.POST, "api/dag/run/id/{id}/start");
 
-        controller.handler(persistenceService::markDagRunCanceled)
+        controller.handler(this::cancel)
             .param1(controller.param().toLong("id"))
             .response((request, result) -> {
-                if (result) request.response().status(HttpResponseStatus.ACCEPTED).empty();
+                if (result) request.response().status(HttpResponseStatus.NO_CONTENT).empty();
                 else request.response().status(HttpResponseStatus.METHOD_NOT_ALLOWED).empty();
             })
             .handle(HttpMethod.POST, "api/dag/run/id/{id}/cancel");
+    }
+
+    private boolean cancel(long id) {
+        dagRunExecutor.cancel(id);
+        return true;
     }
 }

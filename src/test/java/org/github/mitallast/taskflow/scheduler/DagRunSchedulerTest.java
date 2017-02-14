@@ -110,9 +110,9 @@ public class DagRunSchedulerTest extends BaseTest {
             {dag, dagRun.start().cancel(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE), new CancelDagRunCommand(dagRun)},
             {dag, dagRun.start().cancel(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE), new CancelDagRunCommand(dagRun)},
             // check cancel if one running
-            {dag, dagRun.start().cancel(taskRunA).start(taskRunB), new CancelTaskRunCommand(taskRunC)},
-            {dag, dagRun.start().cancel(taskRunA, taskRunB, taskRunC).start(taskRunD), new CancelTaskRunCommand(taskRunE)},
-            {dag, dagRun.start().cancel(taskRunA, taskRunB, taskRunC, taskRunD).start(taskRunE), new AwaitCommand(dagRun)},
+            {dag, dagRun.start().cancel(taskRunA).start(taskRunB), new CancelTaskRunCommand(taskRunB)},
+            {dag, dagRun.start().cancel(taskRunA, taskRunB, taskRunC).start(taskRunD), new CancelTaskRunCommand(taskRunD)},
+            {dag, dagRun.start().cancel(taskRunA, taskRunB, taskRunC, taskRunD).start(taskRunE), new CancelTaskRunCommand(taskRunE)},
             // check cancel if one success
             {dag, dagRun.start().cancel(taskRunA).success(taskRunB), new CancelTaskRunCommand(taskRunC)},
             {dag, dagRun.start().cancel(taskRunA, taskRunB, taskRunC).success(taskRunD), new CancelTaskRunCommand(taskRunE)},

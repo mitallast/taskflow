@@ -96,4 +96,28 @@ public class TaskRun implements Comparable<TaskRun> {
         Preconditions.checkArgument(finishDate == null);
         return new TaskRun(id, dagId, taskId, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.CANCELED, operationResult);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        TaskRun taskRun = (TaskRun) o;
+
+        if (id != taskRun.id) return false;
+        if (dagId != taskRun.dagId) return false;
+        if (taskId != taskRun.taskId) return false;
+        if (dagRunId != taskRun.dagRunId) return false;
+        return createdDate.equals(taskRun.createdDate);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (id ^ (id >>> 32));
+        result = 31 * result + (int) (dagId ^ (dagId >>> 32));
+        result = 31 * result + (int) (taskId ^ (taskId >>> 32));
+        result = 31 * result + (int) (dagRunId ^ (dagRunId >>> 32));
+        result = 31 * result + createdDate.hashCode();
+        return result;
+    }
 }

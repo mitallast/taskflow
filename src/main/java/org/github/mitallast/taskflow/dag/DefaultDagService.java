@@ -150,4 +150,14 @@ public class DefaultDagService extends AbstractComponent implements DagService {
             return false;
         }
     }
+
+    @Override
+    public boolean markTaskRunCanceled(TaskRun taskRun) {
+        if (persistenceService.markTaskRunCanceled(taskRun.id())) {
+            dagRunExecutor.schedule(taskRun.dagRunId());
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

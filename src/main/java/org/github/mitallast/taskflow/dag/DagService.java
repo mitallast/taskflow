@@ -16,4 +16,6 @@ public interface DagService {
     boolean markTaskRunSuccess(TaskRun taskRun, OperationResult operationResult);
 
     boolean markTaskRunFailed(TaskRun taskRun, OperationResult operationResult);
+
+    boolean markTaskRunCanceled(TaskRun taskRun);
 }
