@@ -130,11 +130,11 @@ public final class DagRunState {
                     throw new IllegalStateException("Illegal task run state: " + taskRunStatus);
             }
         }
-        if (hasPending) {
-            return PENDING;
-        }
         if (hasRunning) {
             return RUNNING;
+        }
+        if (hasPending) {
+            return PENDING;
         }
 
         return TaskRunStatus.SUCCESS;
