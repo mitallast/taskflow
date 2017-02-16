@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import org.github.mitallast.taskflow.aws.AwsModule;
 import org.github.mitallast.taskflow.common.component.ComponentModule;
 import org.github.mitallast.taskflow.common.component.LifecycleService;
 import org.github.mitallast.taskflow.common.component.ModulesBuilder;
@@ -30,19 +31,12 @@ public class Main {
         modules.add(new DagModule());
         modules.add(new SchedulerModule());
         modules.add(new RestModule());
+        modules.add(new AwsModule());
 
         Injector injector = modules.createInjector();
         LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
 
         lifecycleService.start();
-
-        DagPersistenceService dagPersistence = injector.getInstance(DagPersistenceService.class);
-
-        if(false)
-        dagPersistence.createDag(new Dag(
-            "test_dag",
-            new Task("test_task_1", ImmutableSet.of(), "dummy", new OperationCommand(ConfigFactory.empty(), new OperationEnvironment()))
-        ));
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {

@@ -85,12 +85,12 @@ public class TaskRunExecutor extends AbstractComponent {
                     dagService.markTaskRunFailed(taskRun, operationResult);
                     break;
             }
-        } catch (IOException e) {
-            logger.warn("task run {} failed", taskRun.id(), e);
-            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, "", e.toString()));
         } catch (InterruptedException e) {
             logger.warn("task run {} canceled", taskRun.id(), e);
             dagService.markTaskRunCanceled(taskRun);
+        } catch (Exception e) {
+            logger.warn("task run {} failed", taskRun.id(), e);
+            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, "", e.toString()));
         } finally {
             // cleanup to prevent memory leak
             futures.remove(taskRun);
