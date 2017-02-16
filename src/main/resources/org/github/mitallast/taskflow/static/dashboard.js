@@ -227,7 +227,7 @@
             $scope.runs = response.data;
         });
     })
-    .controller('DagRunIdCtrl', function($scope, $http, $routeParams){
+    .controller('DagRunIdCtrl', function($scope, $http, $routeParams, $timeout){
         $scope.cancelable = false;
         $scope.cancelDagRun = function() {
             $http.post('/api/dag/run/id/' + $routeParams.id + '/cancel')
@@ -240,6 +240,11 @@
             .then(function(response){
                 $scope.dag_run = response.data;
                 $scope.cancelable = $scope.dag_run.status == "PENDING" || $scope.dag_run.status == "RUNNING";
+                if($scope.cancelable) {
+                    $timeout(function(){
+                      $scope.load();
+                    },100)
+                }
             });
         };
         $scope.load();
@@ -325,37 +330,26 @@
                         var month = week * 4;
                         var year = month * 4;
 
-                        var ticks;
-                        if(duration > year) {
-                            console.log("1 year");
-                            ticks = d3.timeYear.every(1);
-                        } else if(duration > month) {
-                            console.log("1 month");
-                            ticks = d3.timeMonth.every(1);
-                        } else if(duration > week) {
-                            console.log("1 w");
-                            ticks = d3.timeWeek.every(1);
-                        } else if(duration > day) {
-                            console.log("1 d");
-                            ticks = d3.timeDay.every(1);
-                        } else if(duration > hour) {
-                            console.log("1 h");
-                            ticks = d3.timeHour.every(1);
-                        } else if(duration > minute) {
-                            console.log("1 min");
-                            ticks = d3.timeMinute.every(1);
-                        } else if(duration > sec){
-                            if(duration > sec * 10) {
-                                console.log("10 s");
-                                ticks = d3.timeSecond.every(5);
-                            }else{
-                                console.log("1 s");
-                                ticks = d3.timeSecond.every(1);
-                            }
-                        } else {
-                            console.log("100 ms");
-                            ticks = d3.timeMilliseconds.every(100);
-                        }
+                        console.log('minute', minute);
+                        console.log('hour', hour);
+
+                        var tickMap = [
+                            { duration: year,        ticks: d3.timeMonth.every(2) },
+                            { duration: month,       ticks: d3.timeWeek.every(1) },
+                            { duration: week,        ticks: d3.timeDay.every(1) },
+                            { duration: day,         ticks: d3.timeHour.every(4) },
+                            { duration: hour * 12,   ticks: d3.timeHour.every(1) },
+                            { duration: hour,        ticks: d3.timeMinute.every(10) },
+                            { duration: minute * 30, ticks: d3.timeMinute.every(5) },
+                            { duration: minute * 10, ticks: d3.timeMinute.every(1) },
+                            { duration: minute,      ticks: d3.timeSecond.every(10) },
+                            { duration: sec * 30,    ticks: d3.timeSecond.every(5) },
+                            { duration: 0,           ticks: d3.timeSecond.every(1) },
+                        ];
+
+                        var ticks = tickMap.filter(function(t){ return t.duration < duration; })[0]
+                        console.log(ticks);
+                        ticks = ticks.ticks;
 
                         var xAxis = d3.axisBottom(timeScale)
                             .ticks(ticks)

@@ -48,6 +48,7 @@ public class DagRunSchedulerTest extends BaseTest {
     private static final TaskRun taskRunE = new TaskRun(5, 1, 5, 1, created, null, null, TaskRunStatus.PENDING, null);
 
     private static final TaskRun taskRunA2 = new TaskRun(6, 1, 1, 1, created, null, null, TaskRunStatus.PENDING, null);
+    private static final TaskRun taskRunB2 = new TaskRun(7, 1, 2, 1, created, null, null, TaskRunStatus.PENDING, null);
 
     private static final ImmutableList<TaskRun> taskRuns = ImmutableList.of(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE);
 
@@ -99,8 +100,8 @@ public class DagRunSchedulerTest extends BaseTest {
             {dag, dagRun.start().failure(taskRunA), new RetryTaskRunCommand(taskRunA)},
             {dag, dagRun.start().failure(taskRunA).retry(taskRunA2), new ExecuteTaskRunCommand(taskRunA2)},
             {dag, dagRun.start().failure(taskRunA).retry(taskRunA2).start(taskRunA2), new ExecuteTaskRunCommand(taskRunB)},
-            {dag, dagRun.start().failure(taskRunA, taskRunB).retry(taskRunA2), new ExecuteTaskRunCommand(taskRunA2)},
-            {dag, dagRun.start().failure(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE).retry(taskRunA2), new ExecuteTaskRunCommand(taskRunA2)},
+            {dag, dagRun.start().failure(taskRunA, taskRunB).retry(taskRunA2), new RetryTaskRunCommand(taskRunB)},
+            {dag, dagRun.start().failure(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE).retry(taskRunA2), new RetryTaskRunCommand(taskRunB)},
 
             // check cancel
             {dag, dagRun.start().cancel(taskRunA), new CancelTaskRunCommand(taskRunB)},

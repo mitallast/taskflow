@@ -41,15 +41,20 @@ public class DagRunScheduler {
                     return new CancelDagRunCommand(dagRun);
                 }
 
-                logger.info("check task run status");
+                logger.info("check failed tasks");
                 for (TaskRun taskRun : dagRunState.lastTaskRuns()) {
-                    logger.info("task run {} status {}", taskRun.id(), taskRun.status());
+                    logger.debug("task run {} status {}", taskRun.id(), taskRun.status());
 
                     // @todo add retry policy
                     if (taskRun.status() == TaskRunStatus.FAILED) {
                         logger.info("dag run has failed task, retry: {}", taskRun.id());
                         return new RetryTaskRunCommand(taskRun);
                     }
+                }
+
+                logger.info("check pending tasks");
+                for (TaskRun taskRun : dagRunState.lastTaskRuns()) {
+                    logger.debug("task run {} status {}", taskRun.id(), taskRun.status());
 
                     if (taskRun.status() == TaskRunStatus.PENDING) {
                         if (dagRunState.taskRunDependsStatus(taskRun) == TaskRunStatus.SUCCESS) {

@@ -76,22 +76,27 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
     }
 
     private void process(long dagRunId) {
-        Optional<DagRun> dagRunOpt = persistenceService.findDagRun(dagRunId);
-        if (!dagRunOpt.isPresent()) {
-            logger.warn("dag run {} not found", dagRunId);
-            return;
-        }
-        DagRun dagRun = dagRunOpt.get();
+        try {
+            logger.info("process {}", dagRunId);
+            Optional<DagRun> dagRunOpt = persistenceService.findDagRun(dagRunId);
+            if (!dagRunOpt.isPresent()) {
+                logger.warn("dag run {} not found", dagRunId);
+                return;
+            }
+            DagRun dagRun = dagRunOpt.get();
 
-        Optional<Dag> dagOpt = persistenceService.findDagById(dagRun.dagId());
-        if (!dagOpt.isPresent()) {
-            logger.warn("dag not found: {}", dagRun);
-            persistenceService.markDagRunFailed(dagRunId);
-            return;
-        }
-        Dag dag = dagOpt.get();
+            Optional<Dag> dagOpt = persistenceService.findDagById(dagRun.dagId());
+            if (!dagOpt.isPresent()) {
+                logger.warn("dag not found: {}", dagRun);
+                persistenceService.markDagRunFailed(dagRunId);
+                return;
+            }
+            Dag dag = dagOpt.get();
 
-        process(dag, dagRun);
+            process(dag, dagRun);
+        } catch (Exception e) {
+            logger.warn("unexpected exception", e);
+        }
     }
 
     private void process(final Dag dag, final DagRun dagRun) {
