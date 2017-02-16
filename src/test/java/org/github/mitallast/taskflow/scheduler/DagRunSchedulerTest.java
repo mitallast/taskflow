@@ -31,11 +31,11 @@ public class DagRunSchedulerTest extends BaseTest {
         new OperationEnvironment()
     );
 
-    private static final Task taskA = new Task(1, 1, "A", of(), "dummy", command);
-    private static final Task taskB = new Task(2, 1, "B", of(), "dummy", command);
-    private static final Task taskC = new Task(3, 1, "C", of(), "dummy", command);
-    private static final Task taskD = new Task(4, 1, "D", of(), "dummy", command);
-    private static final Task taskE = new Task(5, 1, "E", of(), "dummy", command);
+    private static final Task taskA = new Task(1, 1, "A", of(), 3, "dummy", command);
+    private static final Task taskB = new Task(2, 1, "B", of(), 3, "dummy", command);
+    private static final Task taskC = new Task(3, 1, "C", of(), 3, "dummy", command);
+    private static final Task taskD = new Task(4, 1, "D", of(), 3, "dummy", command);
+    private static final Task taskE = new Task(5, 1, "E", of(), 3, "dummy", command);
 
     private static final ImmutableList<Task> tasks = ImmutableList.of(taskA, taskB, taskC, taskD, taskE);
 
@@ -48,7 +48,7 @@ public class DagRunSchedulerTest extends BaseTest {
     private static final TaskRun taskRunE = new TaskRun(5, 1, 5, 1, created, null, null, TaskRunStatus.PENDING, null);
 
     private static final TaskRun taskRunA2 = new TaskRun(6, 1, 1, 1, created, null, null, TaskRunStatus.PENDING, null);
-    private static final TaskRun taskRunB2 = new TaskRun(7, 1, 2, 1, created, null, null, TaskRunStatus.PENDING, null);
+    private static final TaskRun taskRunA3 = new TaskRun(7, 1, 1, 1, created, null, null, TaskRunStatus.PENDING, null);
 
     private static final ImmutableList<TaskRun> taskRuns = ImmutableList.of(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE);
 
@@ -102,6 +102,8 @@ public class DagRunSchedulerTest extends BaseTest {
             {dag, dagRun.start().failure(taskRunA).retry(taskRunA2).start(taskRunA2), new ExecuteTaskRunCommand(taskRunB)},
             {dag, dagRun.start().failure(taskRunA, taskRunB).retry(taskRunA2), new RetryTaskRunCommand(taskRunB)},
             {dag, dagRun.start().failure(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE).retry(taskRunA2), new RetryTaskRunCommand(taskRunB)},
+            {dag, dagRun.start().failure(taskRunA).retry(taskRunA2).retry(taskRunA3).failure(taskRunA2, taskRunA3), new CancelTaskRunCommand(taskRunB)},
+            {dag, dagRun.start().failure(taskRunA).retry(taskRunA2).retry(taskRunA3).failure(taskRunA2, taskRunA3).success(taskRunB,taskRunC,taskRunD,taskRunE), new FailedDagRunCommand(dagRun)},
 
             // check cancel
             {dag, dagRun.start().cancel(taskRunA), new CancelTaskRunCommand(taskRunB)},

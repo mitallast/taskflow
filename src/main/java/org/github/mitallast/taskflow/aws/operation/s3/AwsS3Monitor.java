@@ -59,8 +59,8 @@ public class AwsS3Monitor extends AbstractComponent implements Operation {
                     return new OperationResult(OperationStatus.SUCCESS, "", "");
                 }
             }
-            logger.info("sleep 10s");
-            Thread.sleep(10000);
+            logger.info("sleep 1s");
+            Thread.sleep(1000);
         }
 
         if (Thread.interrupted()) {

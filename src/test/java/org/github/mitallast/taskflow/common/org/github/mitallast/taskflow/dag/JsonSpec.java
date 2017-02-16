@@ -31,6 +31,7 @@ public class JsonSpec {
                     345,
                     "test_task",
                     ImmutableSet.of("test_task"),
+                    3,
                     "dummy",
                     new OperationCommand(
                         ConfigFactory.parseString("test=test"),

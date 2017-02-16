@@ -78,6 +78,16 @@ public final class DagRunState {
         return idTaskRunLatestMap.values();
     }
 
+    public boolean hasFailedOutOfRetry() {
+        for (Task task : dag.tasks()) {
+            ImmutableList<TaskRun> taskRuns = idTaskRunMap.get(task.id());
+            if (taskRuns.stream().map(TaskRun::status).filter(FAILED::equals).count() >= task.retry()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean hasLastRunCanceled() {
         for (TaskRun taskRun : idTaskRunLatestMap.values()) {
             if (taskRun.status() == CANCELED) {
@@ -107,6 +117,14 @@ public final class DagRunState {
     public TaskRunStatus taskRunDependsStatus(Task task) {
         ImmutableList<Task> depends = depends(task);
         return taskRunDependsStatus(depends);
+    }
+
+    public Task task(TaskRun taskRun) {
+        return idTaskMap.get(taskRun.taskId());
+    }
+
+    public ImmutableList<TaskRun> taskRuns(Task task) {
+        return idTaskRunMap.get(task.id());
     }
 
     private TaskRunStatus taskRunDependsStatus(ImmutableList<Task> depends) {

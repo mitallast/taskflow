@@ -13,11 +13,12 @@ public class Task {
     private final int version;
     private final String token;
     private final ImmutableSet<String> depends;
+    private final int retry;
     private final String operation;
     private final OperationCommand command;
 
-    public Task(String token, ImmutableSet<String> depends, String operation, OperationCommand command) {
-        this(0, 0, token, depends, operation, command);
+    public Task(String token, ImmutableSet<String> depends, int retry, String operation, OperationCommand command) {
+        this(0, 0, token, depends, retry, operation, command);
     }
 
     @JsonCreator
@@ -26,12 +27,14 @@ public class Task {
         @JsonProperty("version") int version,
         @JsonProperty("token") String token,
         @JsonProperty("depends") ImmutableSet<String> depends,
+        @JsonProperty("retry") int retry,
         @JsonProperty("operation") String operation,
         @JsonProperty("command") OperationCommand command) {
         this.id = id;
         this.version = version;
         this.token = token;
         this.depends = depends;
+        this.retry = retry;
         this.operation = operation;
         this.command = command;
     }
@@ -53,7 +56,11 @@ public class Task {
     }
 
     public Task depend(String... tokens) {
-        return new Task(id, version, token, ImmutableSet.<String>builder().addAll(depends).add(tokens).build(), operation, command);
+        return new Task(id, version, token, ImmutableSet.<String>builder().addAll(depends).add(tokens).build(), retry, operation, command);
+    }
+
+    public int retry() {
+        return retry;
     }
 
     public String operation() {
@@ -85,6 +92,7 @@ public class Task {
         result = 31 * result + version;
         result = 31 * result + token.hashCode();
         result = 31 * result + depends.hashCode();
+        result = 31 * result + retry;
         result = 31 * result + operation.hashCode();
         result = 31 * result + command.hashCode();
         return result;
@@ -97,6 +105,7 @@ public class Task {
             ", version=" + version +
             ", token=" + token +
             ", depends=" + depends +
+            ", retry=" + retry +
             ", operation=" + operation +
             ", command=" + command +
             '}';

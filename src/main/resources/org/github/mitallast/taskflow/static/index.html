@@ -89,6 +89,7 @@
                 <th>version</th>
                 <th>token</th>
                 <th>depends</th>
+                <th>retry</th>
                 <th>operation</th>
                 <th>config</th>
                 <th>environment</th>
@@ -105,6 +106,7 @@
                         {{token}}
                     </span>
                 </td>
+                <td>{{task.retry}}</td>
                 <td>{{task.operation}}</td>
                 <td>
                     <span ng-repeat="(key,value) in task.command.config">
@@ -151,6 +153,11 @@
                     <label class="control-label">Depends</label>
                     <textarea json-text depends ng-model="task.depends" name="depends" required class="form-control"></textarea>
                     <span class="help-block" ng-show="errors.tasks[$index].depends">{{errors.tasks[$index].depends}}</span>
+                </div>
+                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].retry}">
+                    <label class="control-label">Retry</label>
+                    <input ng-model="task.retry" name="retry" required class="form-control" placeholder="0">
+                    <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].retry}}</span>
                 </div>
                 <div class="form-group" ng-class="{'has-error':errors.tasks[$index].operation}">
                     <label class="control-label">Operation</label>
@@ -203,6 +210,11 @@
                     <label class="control-label">Depends</label>
                     <textarea json-text depends ng-model="task.depends" name="depends" required class="form-control"></textarea>
                     <span class="help-block" ng-show="errors.tasks[$index].depends">{{errors.tasks[$index].depends}}</span>
+                </div>
+                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].retry}">
+                    <label class="control-label">Retry</label>
+                    <input ng-model="task.retry" name="retry" required class="form-control" placeholder="0">
+                    <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].retry}}</span>
                 </div>
                 <div class="form-group" ng-class="{'has-error':errors.tasks[$index].operation}">
                     <label class="control-label">Operation</label>

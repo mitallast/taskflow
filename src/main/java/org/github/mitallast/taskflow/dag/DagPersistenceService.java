@@ -63,6 +63,7 @@ public class DagPersistenceService extends AbstractComponent {
         private final static Field<Boolean> latest = field("latest", SQLDataType.BOOLEAN.nullable(false));
 
         private final static Field<Integer> version = field("version", SQLDataType.INTEGER.nullable(false));
+        private final static Field<Integer> retry = field("retry", SQLDataType.INTEGER.nullable(false));
 
         private final static Field<Timestamp> created_date = field("created_date", SQLDataType.TIMESTAMP.nullable(false));
         private final static Field<Timestamp> start_date = field("start_date", SQLDataType.TIMESTAMP.nullable(true));
@@ -125,6 +126,7 @@ public class DagPersistenceService extends AbstractComponent {
                     .column(field.token)
                     .column(field.dag_id)
                     .column(field.depends)
+                    .column(field.retry)
                     .column(field.operation)
                     .column(field.operation_config)
                     .column(field.operation_environment)
@@ -222,6 +224,7 @@ public class DagPersistenceService extends AbstractComponent {
                             field.token,
                             field.dag_id,
                             field.depends,
+                            field.retry,
                             field.operation,
                             field.operation_config,
                             field.operation_environment)
@@ -231,6 +234,7 @@ public class DagPersistenceService extends AbstractComponent {
                             val(task.token()),
                             val(dagId),
                             val(serialize(task.depends())),
+                            val(task.retry()),
                             val(task.operation()),
                             val(serialize(task.command().config())),
                             val(serialize(task.command().environment().map()))
@@ -242,7 +246,7 @@ public class DagPersistenceService extends AbstractComponent {
 
                     logger.info("task id={} token={}", taskId, task.token());
 
-                    tasks.add(new Task(taskId, version, task.token(), task.depends(), task.operation(), task.command()));
+                    tasks.add(new Task(taskId, version, task.token(), task.depends(), task.retry(), task.operation(), task.command()));
                 }
 
                 return new Dag(dagId, version, dag.token(), tasks.build());
@@ -665,6 +669,7 @@ public class DagPersistenceService extends AbstractComponent {
             record.get(field.version),
             record.get(field.token),
             deserializeTokens(record.get(field.depends)),
+            record.get(field.retry),
             record.get(field.operation),
             new OperationCommand(
                 deserializeConfig(record.get(field.operation_config)),
