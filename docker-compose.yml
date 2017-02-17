@@ -1,0 +1,18 @@
+version: '2'
+services:
+    taskflow:
+        image: mitallast/taskflow
+        ports:
+          - "8080:8080"
+        environment:
+          - DB_URL=jdbc:postgresql://postgres:5432/taskflow
+          - DB_USER=taskflow
+          - DB_PASSWORD=taskflow
+        depends_on:
+          - postgres
+    postgres:
+        image: postgres
+        environment:
+          - POSTGRES_USER=taskflow
+          - POSTGRES_PASSWORD=taskflow
+          - POSTGRES_DB=taskflow

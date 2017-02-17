@@ -34,7 +34,9 @@ public class ResourceHandler extends AbstractComponent {
                     .handle(HttpMethod.GET, resourcePath);
             });
 
-        if (false) {
+        File staticFiles = new File("./src/main/resources/org/github/mitallast/taskflow/static");
+
+        if (!staticFiles.exists()) {
             resources.stream()
                 .filter(resource -> resource.getResourceName().startsWith("org/github/mitallast/taskflow/static"))
                 .forEach(resource -> {
@@ -89,7 +91,7 @@ public class ResourceHandler extends AbstractComponent {
     }
 
     public URL resourceStatic(String path) {
-        return getClass().getResource("/org/github/mitallast/taskflow/" + path);
+        return getClass().getResource("/org/github/mitallast/taskflow" + path);
     }
 
     public File fileStatic(String path) {

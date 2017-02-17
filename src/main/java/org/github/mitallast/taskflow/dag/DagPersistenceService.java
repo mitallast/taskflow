@@ -84,13 +84,13 @@ public class DagPersistenceService extends AbstractComponent {
 
     @Inject
     public DagPersistenceService(Config config, PersistenceService persistence, JsonService jsonService) {
-        super(config, DagPersistenceService.class);
+        super(config.getConfig("persistence"), DagPersistenceService.class);
         this.persistence = persistence;
         this.jsonService = jsonService;
 
-        if (false)
-            try (DSLContext context = persistence.context()) {
+        try (DSLContext context = persistence.context()) {
 
+            if (this.config.getBoolean("cleanup")) {
                 context.dropTableIfExists(table.task_run).execute();
                 context.dropTableIfExists(table.dag_run).execute();
                 context.dropTableIfExists(table.task).execute();
@@ -100,70 +100,71 @@ public class DagPersistenceService extends AbstractComponent {
                 context.dropSequenceIfExists(sequence.task_seq).execute();
                 context.dropSequenceIfExists(sequence.dag_run_seq).execute();
                 context.dropSequenceIfExists(sequence.task_run_seq).execute();
-
-                context.createSequenceIfNotExists(sequence.dag_seq).execute();
-                context.createSequenceIfNotExists(sequence.task_seq).execute();
-                context.createSequenceIfNotExists(sequence.dag_run_seq).execute();
-                context.createSequenceIfNotExists(sequence.task_run_seq).execute();
-
-                context.createTableIfNotExists(table.dag)
-                    .column(field.id)
-                    .column(field.version)
-                    .column(field.token)
-                    .column(field.latest)
-                    .constraint(constraint().primaryKey(field.id))
-                    .constraint(constraint("dag_version").unique(field.token, field.version))
-                    .execute();
-
-                context.createUniqueIndex("dag_token_version_latest")
-                    .on(table.dag, field.token, field.latest)
-                    .where(field.latest.isTrue())
-                    .execute();
-
-                context.createTableIfNotExists(table.task)
-                    .column(field.id)
-                    .column(field.version)
-                    .column(field.token)
-                    .column(field.dag_id)
-                    .column(field.depends)
-                    .column(field.retry)
-                    .column(field.operation)
-                    .column(field.operation_config)
-                    .column(field.operation_environment)
-                    .constraint(constraint().primaryKey(field.id))
-                    .constraint(constraint("dag_task_version").unique(field.dag_id, field.token, field.version))
-                    .constraint(constraint("task_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
-                    .execute();
-
-                context.createTableIfNotExists(table.dag_run)
-                    .column(field.id)
-                    .column(field.dag_id)
-                    .column(field.created_date)
-                    .column(field.start_date)
-                    .column(field.finish_date)
-                    .column(field.status)
-                    .constraint(constraint().primaryKey(field.id))
-                    .constraint(constraint("dag_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
-                    .execute();
-
-                context.createTableIfNotExists(table.task_run)
-                    .column(field.id)
-                    .column(field.dag_id)
-                    .column(field.task_id)
-                    .column(field.dag_run_id)
-                    .column(field.created_date)
-                    .column(field.start_date)
-                    .column(field.finish_date)
-                    .column(field.status)
-                    .column(field.operation_status)
-                    .column(field.operation_stdout)
-                    .column(field.operation_stderr)
-                    .constraint(constraint().primaryKey(field.id))
-                    .constraint(constraint("task_run_fk_dag_run").foreignKey(field.dag_run_id).references(table.dag_run, field.id))
-                    .constraint(constraint("task_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
-                    .constraint(constraint("task_run_fk_task").foreignKey(field.task_id).references(table.task, field.id))
-                    .execute();
             }
+
+            context.createSequenceIfNotExists(sequence.dag_seq).execute();
+            context.createSequenceIfNotExists(sequence.task_seq).execute();
+            context.createSequenceIfNotExists(sequence.dag_run_seq).execute();
+            context.createSequenceIfNotExists(sequence.task_run_seq).execute();
+
+            context.createTableIfNotExists(table.dag)
+                .column(field.id)
+                .column(field.version)
+                .column(field.token)
+                .column(field.latest)
+                .constraint(constraint().primaryKey(field.id))
+                .constraint(constraint("dag_version").unique(field.token, field.version))
+                .execute();
+
+            context.createUniqueIndexIfNotExists("dag_token_version_latest")
+                .on(table.dag, field.token, field.latest)
+                .where(field.latest.isTrue())
+                .execute();
+
+            context.createTableIfNotExists(table.task)
+                .column(field.id)
+                .column(field.version)
+                .column(field.token)
+                .column(field.dag_id)
+                .column(field.depends)
+                .column(field.retry)
+                .column(field.operation)
+                .column(field.operation_config)
+                .column(field.operation_environment)
+                .constraint(constraint().primaryKey(field.id))
+                .constraint(constraint("dag_task_version").unique(field.dag_id, field.token, field.version))
+                .constraint(constraint("task_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
+                .execute();
+
+            context.createTableIfNotExists(table.dag_run)
+                .column(field.id)
+                .column(field.dag_id)
+                .column(field.created_date)
+                .column(field.start_date)
+                .column(field.finish_date)
+                .column(field.status)
+                .constraint(constraint().primaryKey(field.id))
+                .constraint(constraint("dag_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
+                .execute();
+
+            context.createTableIfNotExists(table.task_run)
+                .column(field.id)
+                .column(field.dag_id)
+                .column(field.task_id)
+                .column(field.dag_run_id)
+                .column(field.created_date)
+                .column(field.start_date)
+                .column(field.finish_date)
+                .column(field.status)
+                .column(field.operation_status)
+                .column(field.operation_stdout)
+                .column(field.operation_stderr)
+                .constraint(constraint().primaryKey(field.id))
+                .constraint(constraint("task_run_fk_dag_run").foreignKey(field.dag_run_id).references(table.dag_run, field.id))
+                .constraint(constraint("task_run_fk_dag").foreignKey(field.dag_id).references(table.dag, field.id))
+                .constraint(constraint("task_run_fk_task").foreignKey(field.task_id).references(table.task, field.id))
+                .execute();
+        }
     }
 
     /**
