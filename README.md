@@ -4,7 +4,7 @@
 
 Taskflow is a service to declarative define, schedule and monitor workflows, presented as DAGs.
 
-## Get started with docker
+## Get started with Docker
 
 Last version of service already contains [on docker hub](https://hub.docker.com/r/mitallast/taskflow/)
 
@@ -22,7 +22,7 @@ You can add your jdbc driver and override settings.
 
 ## Configuration
 
-See [reference.conf](https://github.com/mitallast/taskflow/src/main/resources/reference.conf) for it.
+See [reference.conf](https://github.com/mitallast/taskflow/blob/master/src/main/resources/reference.conf) for it.
 This is a [typesafehub/config Hocon format](https://github.com/typesafehub/config)
 
 ## Main entities
