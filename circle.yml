@@ -3,7 +3,6 @@ machine:
     - docker
 dependencies:
   pre:
-    - echo $(git describe $(git rev-list --tags --max-count=1))
     - mvn clean package
   override:
     - docker info
