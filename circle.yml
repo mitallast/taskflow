@@ -11,5 +11,5 @@ deployment:
   hub:
     branch: master
     commands:
-      - docker login -u $DOCKER_LOGIN -p $DOCKER_PASS
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_LOGIN -p $DOCKER_PASS
       - docker push mitallast/taskflow
