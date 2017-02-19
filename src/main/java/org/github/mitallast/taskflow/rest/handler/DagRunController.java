@@ -28,12 +28,12 @@ public class DagRunController {
             .handle(HttpMethod.GET, "api/dag/run/pending");
 
         controller.handler(persistenceService::findDagRun)
-            .param1(controller.param().toLong("id"))
+            .param(controller.param().toLong("id"))
             .response(controller.response().optionalJson())
             .handle(HttpMethod.GET, "api/dag/run/id/{id}");
 
         controller.handler(persistenceService::startDagRun)
-            .param1(controller.param().toLong("id"))
+            .param(controller.param().toLong("id"))
             .response((request, result) -> {
                 if (result) request.response().status(HttpResponseStatus.NO_CONTENT).empty();
                 else request.response().status(HttpResponseStatus.METHOD_NOT_ALLOWED).empty();
@@ -41,7 +41,7 @@ public class DagRunController {
             .handle(HttpMethod.POST, "api/dag/run/id/{id}/start");
 
         controller.handler(this::cancel)
-            .param1(controller.param().toLong("id"))
+            .param(controller.param().toLong("id"))
             .response((request, result) -> {
                 if (result) request.response().status(HttpResponseStatus.NO_CONTENT).empty();
                 else request.response().status(HttpResponseStatus.METHOD_NOT_ALLOWED).empty();

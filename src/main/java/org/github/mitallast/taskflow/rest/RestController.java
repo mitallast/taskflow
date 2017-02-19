@@ -1,7 +1,6 @@
 package org.github.mitallast.taskflow.rest;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import io.netty.buffer.ByteBuf;
@@ -134,25 +133,23 @@ public class RestController extends AbstractComponent {
         return paramMappers;
     }
 
-    public <R> FunctionMapperBuilder<R> handler(FunctionHandler<R> handler) {
-        return new FunctionMapperBuilder<>(handler);
+    public <R> FunctionResponseMapper<R> handler(FunctionHandler<R> handler) {
+        return new FunctionResponseMapper<>(handler);
     }
 
-    public <R, P1> Function1MapperBuilder<R, P1> handler(Function1Handler<R, P1> handler) {
-        return new Function1MapperBuilder<>(handler);
+    public <R, P1> FunctionParameter1Mapper<R, P1> handler(Function1Handler<R, P1> handler) {
+        return new FunctionParameter1Mapper<>(handler);
     }
 
-    public <R, P1, P2> Function2MapperBuilder<R, P1, P2> handler(Function2Handler<R, P1, P2> handler) {
-        return new Function2MapperBuilder<>(handler);
+    public <R, P1, P2> FunctionParameter2Mapper<R, P1, P2> handler(Function2Handler<R, P1, P2> handler) {
+        return new FunctionParameter2Mapper<>(handler);
     }
 
-    public <R, P1, P2, P3> Function3MapperBuilder<R, P1, P2, P3> handler(Function3Handler<R, P1, P2, P3> handler) {
-        return new Function3MapperBuilder<>(handler);
+    public <R, P1, P2, P3> FunctionParameter3Mapper<R, P1, P2, P3> handler(Function3Handler<R, P1, P2, P3> handler) {
+        return new FunctionParameter3Mapper<>(handler);
     }
 
-    /*
-     * Functional mappers
-     */
+    // Functional mappers
 
     public final class ResponseMappers {
 
@@ -261,143 +258,90 @@ public class RestController extends AbstractComponent {
         }
     }
 
-    public final class FunctionMapperBuilder<R> {
-        private final FunctionHandler<R> handler;
-        private BiConsumer<RestRequest, R> responseMapper;
+    // function handler parameter mapper builder
 
-        public FunctionMapperBuilder(FunctionHandler<R> handler) {
-            this.handler = handler;
+    public final class FunctionParameter3Mapper<R, P1, P2, P3> {
+        private final Function3Builder<R, P1, P2, P3> builder;
+
+        public FunctionParameter3Mapper(Function3Handler<R, P1, P2, P3> handler) {
+            this.builder = param1Mapper -> param2Mapper -> param3Mapper -> responseMapper -> new Function3Mapper<>(handler, param1Mapper, param2Mapper, param3Mapper, responseMapper);
         }
 
-        public FunctionMapperBuilder<R> response(BiConsumer<RestRequest, R> responseMapper) {
-            this.responseMapper = responseMapper;
-            return this;
+        public FunctionParameter3Mapper(Function3Builder<R, P1, P2, P3> builder) {
+            this.builder = builder;
         }
 
-        public FunctionMapper<R> build() {
-            Preconditions.checkNotNull(handler);
-            Preconditions.checkNotNull(responseMapper);
-            return new FunctionMapper<R>(handler, responseMapper);
-        }
-
-        public void handle(HttpMethod method, String path) {
-            register(method, path, build());
+        public FunctionParameter2Mapper<R, P2, P3> param(Function<RestRequest, P1> paramMapper) {
+            return new FunctionParameter2Mapper<>(builder.build(paramMapper));
         }
     }
 
-    public final class Function1MapperBuilder<R, P1> {
-        private final Function1Handler<R, P1> handler;
-        private BiConsumer<RestRequest, R> responseMapper;
-        private Function<RestRequest, P1> param1mapper;
+    public final class FunctionParameter2Mapper<R, P1, P2> {
 
-        public Function1MapperBuilder(Function1Handler<R, P1> handler) {
-            this.handler = handler;
+        private final Function2Builder<R, P1, P2> builder;
+
+        public FunctionParameter2Mapper(Function2Handler<R, P1, P2> handler) {
+            builder = param1Mapper -> param2Mapper -> responseMapper -> new Function2Mapper<>(handler, param1Mapper, param2Mapper, responseMapper);
         }
 
-        public Function1MapperBuilder<R, P1> response(BiConsumer<RestRequest, R> responseMapper) {
-            this.responseMapper = responseMapper;
-            return this;
+        public FunctionParameter2Mapper(Function2Builder<R, P1, P2> builder) {
+            this.builder = builder;
         }
 
-        public Function1MapperBuilder<R, P1> param1(Function<RestRequest, P1> param1mapper) {
-            this.param1mapper = param1mapper;
-            return this;
-        }
-
-        public RestHandler build() {
-            Preconditions.checkNotNull(handler);
-            Preconditions.checkNotNull(responseMapper);
-            Preconditions.checkNotNull(param1mapper);
-            return new Function1Mapper<R, P1>(handler, responseMapper, param1mapper);
-        }
-
-        public void handle(HttpMethod method, String path) {
-            register(method, path, build());
+        public FunctionParameter1Mapper<R, P2> param(Function<RestRequest, P1> paramMapper) {
+            return new FunctionParameter1Mapper<>(builder.build(paramMapper));
         }
     }
 
-    public final class Function2MapperBuilder<R, P1, P2> {
-        private final Function2Handler<R, P1, P2> handler;
-        private BiConsumer<RestRequest, R> responseMapper;
-        private Function<RestRequest, P1> param1mapper;
-        private Function<RestRequest, P2> param2mapper;
+    public final class FunctionParameter1Mapper<R, P1> {
+        private final Function1Builder<R, P1> builder;
 
-        public Function2MapperBuilder(Function2Handler<R, P1, P2> handler) {
-            this.handler = handler;
+        public FunctionParameter1Mapper(Function1Handler<R, P1> handler) {
+            builder = paramMapper -> responseMapper -> new Function1Mapper<>(handler, paramMapper, responseMapper);
         }
 
-        public Function2MapperBuilder<R, P1, P2> response(BiConsumer<RestRequest, R> responseMapper) {
-            this.responseMapper = responseMapper;
-            return this;
+        public FunctionParameter1Mapper(Function1Builder<R, P1> builder) {
+            this.builder = builder;
         }
 
-        public Function2MapperBuilder<R, P1, P2> param1(Function<RestRequest, P1> param1mapper) {
-            this.param1mapper = param1mapper;
-            return this;
-        }
-
-        public Function2MapperBuilder<R, P1, P2> param2(Function<RestRequest, P2> param2mapper) {
-            this.param2mapper = param2mapper;
-            return this;
-        }
-
-        public RestHandler build() {
-            Preconditions.checkNotNull(handler);
-            Preconditions.checkNotNull(responseMapper);
-            Preconditions.checkNotNull(param1mapper);
-            Preconditions.checkNotNull(param2mapper);
-            return new Function2Mapper<R, P1, P2>(handler, responseMapper, param1mapper, param2mapper);
-        }
-
-        public void handle(HttpMethod method, String path) {
-            register(method, path, build());
+        public FunctionResponseMapper<R> param(Function<RestRequest, P1> paramMapper) {
+            return new FunctionResponseMapper<>(builder.build(paramMapper));
         }
     }
 
-    public final class Function3MapperBuilder<R, P1, P2, P3> {
-        private final Function3Handler<R, P1, P2, P3> handler;
-        private BiConsumer<RestRequest, R> responseMapper;
-        private Function<RestRequest, P1> param1mapper;
-        private Function<RestRequest, P2> param2mapper;
-        private Function<RestRequest, P3> param3mapper;
+    // function handler response mapper builder
 
-        public Function3MapperBuilder(Function3Handler<R, P1, P2, P3> handler) {
+    public class FunctionResponseMapper<R> {
+        private final FunctionBuilder<R> builder;
+
+        public FunctionResponseMapper(FunctionHandler<R> handler) {
+            this(responseMapper -> new FunctionMapper<>(handler, responseMapper));
+        }
+
+        public FunctionResponseMapper(FunctionBuilder<R> builder) {
+            this.builder = builder;
+        }
+
+        public FunctionHandlerBuilder response(BiConsumer<RestRequest, R> responseMapper) {
+            return new FunctionHandlerBuilder(builder.build(responseMapper));
+        }
+    }
+
+    // function rest handler builder
+
+    public final class FunctionHandlerBuilder {
+        private final RestHandler handler;
+
+        public FunctionHandlerBuilder(RestHandler handler) {
             this.handler = handler;
         }
 
-        public Function3MapperBuilder<R, P1, P2, P3> response(BiConsumer<RestRequest, R> responseMapper) {
-            this.responseMapper = responseMapper;
-            return this;
-        }
-
-        public Function3MapperBuilder<R, P1, P2, P3> param1(Function<RestRequest, P1> param1mapper) {
-            this.param1mapper = param1mapper;
-            return this;
-        }
-
-        public Function3MapperBuilder<R, P1, P2, P3> param2(Function<RestRequest, P2> param2mapper) {
-            this.param2mapper = param2mapper;
-            return this;
-        }
-
-        public Function3MapperBuilder<R, P1, P2, P3> param3(Function<RestRequest, P3> param3mapper) {
-            this.param3mapper = param3mapper;
-            return this;
-        }
-
-        public RestHandler build() {
-            Preconditions.checkNotNull(handler);
-            Preconditions.checkNotNull(responseMapper);
-            Preconditions.checkNotNull(param1mapper);
-            Preconditions.checkNotNull(param2mapper);
-            Preconditions.checkNotNull(param3mapper);
-            return new Function3Mapper<R, P1, P2, P3>(handler, responseMapper, param1mapper, param2mapper, param3mapper);
-        }
-
         public void handle(HttpMethod method, String path) {
-            register(method, path, build());
+            register(method, path, handler);
         }
     }
+
+    // function handler mapper
 
     public final class FunctionMapper<R> implements RestHandler {
         private final FunctionHandler<R> handler;
@@ -417,13 +361,17 @@ public class RestController extends AbstractComponent {
 
     public final class Function1Mapper<R, P1> implements RestHandler {
         private final Function1Handler<R, P1> handler;
-        private final BiConsumer<RestRequest, R> responseMapper;
         private final Function<RestRequest, P1> param1mapper;
+        private final BiConsumer<RestRequest, R> responseMapper;
 
-        public Function1Mapper(Function1Handler<R, P1> handler, BiConsumer<RestRequest, R> responseMapper, Function<RestRequest, P1> param1mapper) {
+        public Function1Mapper(
+            Function1Handler<R, P1> handler,
+            Function<RestRequest, P1> param1mapper,
+            BiConsumer<RestRequest, R> responseMapper
+        ) {
             this.handler = handler;
-            this.responseMapper = responseMapper;
             this.param1mapper = param1mapper;
+            this.responseMapper = responseMapper;
         }
 
         @Override
@@ -436,15 +384,20 @@ public class RestController extends AbstractComponent {
 
     public final class Function2Mapper<R, P1, P2> implements RestHandler {
         private final Function2Handler<R, P1, P2> handler;
-        private final BiConsumer<RestRequest, R> responseMapper;
         private final Function<RestRequest, P1> param1mapper;
         private final Function<RestRequest, P2> param2mapper;
+        private final BiConsumer<RestRequest, R> responseMapper;
 
-        public Function2Mapper(Function2Handler<R, P1, P2> handler, BiConsumer<RestRequest, R> responseMapper, Function<RestRequest, P1> param1mapper, Function<RestRequest, P2> param2mapper) {
+        public Function2Mapper(
+            Function2Handler<R, P1, P2> handler,
+            Function<RestRequest, P1> param1mapper,
+            Function<RestRequest, P2> param2mapper,
+            BiConsumer<RestRequest, R> responseMapper
+        ) {
             this.handler = handler;
-            this.responseMapper = responseMapper;
             this.param1mapper = param1mapper;
             this.param2mapper = param2mapper;
+            this.responseMapper = responseMapper;
         }
 
         @Override
@@ -458,23 +411,23 @@ public class RestController extends AbstractComponent {
 
     public final class Function3Mapper<R, P1, P2, P3> implements RestHandler {
         private final Function3Handler<R, P1, P2, P3> handler;
-        private final BiConsumer<RestRequest, R> responseMapper;
         private final Function<RestRequest, P1> param1mapper;
         private final Function<RestRequest, P2> param2mapper;
         private final Function<RestRequest, P3> param3mapper;
+        private final BiConsumer<RestRequest, R> responseMapper;
 
         public Function3Mapper(
             Function3Handler<R, P1, P2, P3> handler,
-            BiConsumer<RestRequest, R> responseMapper,
             Function<RestRequest, P1> param1mapper,
             Function<RestRequest, P2> param2mapper,
-            Function<RestRequest, P3> param3mapper
+            Function<RestRequest, P3> param3mapper,
+            BiConsumer<RestRequest, R> responseMapper
         ) {
             this.handler = handler;
-            this.responseMapper = responseMapper;
             this.param1mapper = param1mapper;
             this.param2mapper = param2mapper;
             this.param3mapper = param3mapper;
+            this.responseMapper = responseMapper;
         }
 
         @Override
@@ -486,6 +439,26 @@ public class RestController extends AbstractComponent {
             responseMapper.accept(request, response);
         }
     }
+
+    // function handler curring
+
+    public interface Function3Builder<R, P1, P2, P3> {
+        Function2Builder<R, P2, P3> build(Function<RestRequest, P1> mapper);
+    }
+
+    public interface Function2Builder<R, P1, P2> {
+        Function1Builder<R, P2> build(Function<RestRequest, P1> mapper);
+    }
+
+    public interface Function1Builder<R, P1> {
+        FunctionBuilder<R> build(Function<RestRequest, P1> mapper);
+    }
+
+    public interface FunctionBuilder<R> {
+        RestHandler build(BiConsumer<RestRequest, R> mapper);
+    }
+
+    // function handler
 
     public interface FunctionHandler<R> {
         R handleRequest();

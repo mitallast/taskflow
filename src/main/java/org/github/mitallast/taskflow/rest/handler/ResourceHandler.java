@@ -29,7 +29,7 @@ public class ResourceHandler extends AbstractComponent {
                 String resourcePath = resource.getResourceName().substring("META-INF".length());
                 logger.trace("register {}", resourcePath);
                 controller.handler(this::webjars)
-                    .param1(controller.param().path())
+                    .param(controller.param().path())
                     .response(controller.response().url())
                     .handle(HttpMethod.GET, resourcePath);
             });
@@ -43,7 +43,7 @@ public class ResourceHandler extends AbstractComponent {
                     String resourcePath = resource.getResourceName().substring("org/github/mitallast/taskflow/".length());
                     logger.info("register {}", resourcePath);
                     controller.handler(this::resourceStatic)
-                        .param1(controller.param().path())
+                        .param(controller.param().path())
                         .response(controller.response().url())
                         .handle(HttpMethod.GET, resourcePath);
                 });
@@ -71,7 +71,7 @@ public class ResourceHandler extends AbstractComponent {
 
                     logger.info("register {}", resourcePath);
                     controller.handler(this::fileStatic)
-                        .param1(controller.param().path())
+                        .param(controller.param().path())
                         .response(controller.response().file())
                         .handle(HttpMethod.GET, resourcePath);
                 });

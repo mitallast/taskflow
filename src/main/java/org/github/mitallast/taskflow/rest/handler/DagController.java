@@ -22,7 +22,7 @@ public class DagController {
         this.persistenceService = persistenceService;
 
         controller.handler(dagService::validate)
-            .param1(controller.param().json(Dag.class))
+            .param(controller.param().json(Dag.class))
             .response((request, errors) -> {
                 if (errors.valid()) {
                     request.response().status(HttpResponseStatus.NO_CONTENT).empty();
@@ -33,12 +33,12 @@ public class DagController {
             .handle(HttpMethod.PUT, "api/dag/validate");
 
         controller.handler(dagService::createDag)
-            .param1(controller.param().json(Dag.class))
+            .param(controller.param().json(Dag.class))
             .response(controller.response().maybeJson())
             .handle(HttpMethod.PUT, "api/dag");
 
         controller.handler(dagService::updateDag)
-            .param1(controller.param().json(Dag.class))
+            .param(controller.param().json(Dag.class))
             .response(controller.response().maybeJson())
             .handle(HttpMethod.POST, "api/dag");
 
@@ -47,22 +47,22 @@ public class DagController {
             .handle(HttpMethod.GET, "api/dag/latest");
 
         controller.handler(persistenceService::findDagById)
-            .param1(controller.param().toLong("id"))
+            .param(controller.param().toLong("id"))
             .response(controller.response().optionalJson())
             .handle(HttpMethod.GET, "api/dag/id/{id}");
 
         controller.handler(persistenceService::findDagByToken)
-            .param1(controller.param().string("token"))
+            .param(controller.param().string("token"))
             .response(controller.response().optionalJson())
             .handle(HttpMethod.GET, "api/dag/token/{token}");
 
         controller.handler(this::runDagById)
-            .param1(controller.param().toLong("id"))
+            .param(controller.param().toLong("id"))
             .response(controller.response().optionalJson())
             .handle(HttpMethod.PUT, "api/dag/id/{id}/run");
 
         controller.handler(this::runDagByToken)
-            .param1(controller.param().string("token"))
+            .param(controller.param().string("token"))
             .response(controller.response().optionalJson())
             .handle(HttpMethod.PUT, "api/dag/token/{token}/run");
     }
