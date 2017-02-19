@@ -1,11 +1,11 @@
-package org.github.mitallast.taskflow.scheduler;
+package org.github.mitallast.taskflow.executor;
 
 import com.google.inject.AbstractModule;
 
-public class SchedulerModule extends AbstractModule {
+public class ExecutorModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(DagRunScheduler.class).asEagerSingleton();
+        bind(DagRunProcessor.class).asEagerSingleton();
         bind(DagRunExecutor.class).asEagerSingleton();
         bind(TaskRunExecutor.class).asEagerSingleton();
     }

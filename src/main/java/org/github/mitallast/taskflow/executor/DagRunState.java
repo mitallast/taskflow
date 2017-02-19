@@ -1,4 +1,4 @@
-package org.github.mitallast.taskflow.scheduler;
+package org.github.mitallast.taskflow.executor;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableCollection;

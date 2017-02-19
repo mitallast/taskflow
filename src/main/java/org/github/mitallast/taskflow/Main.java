@@ -1,6 +1,5 @@
 package org.github.mitallast.taskflow;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Injector;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -13,7 +12,7 @@ import org.github.mitallast.taskflow.dag.*;
 import org.github.mitallast.taskflow.operation.*;
 import org.github.mitallast.taskflow.persistence.PersistenceModule;
 import org.github.mitallast.taskflow.rest.RestModule;
-import org.github.mitallast.taskflow.scheduler.SchedulerModule;
+import org.github.mitallast.taskflow.executor.ExecutorModule;
 
 import java.io.IOException;
 
@@ -29,7 +28,7 @@ public class Main {
         modules.add(new PersistenceModule());
         modules.add(new OperationModule());
         modules.add(new DagModule());
-        modules.add(new SchedulerModule());
+        modules.add(new ExecutorModule());
         modules.add(new RestModule());
         modules.add(new AwsModule());
 

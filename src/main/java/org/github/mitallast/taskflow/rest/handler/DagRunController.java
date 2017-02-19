@@ -5,7 +5,7 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.github.mitallast.taskflow.dag.DagPersistenceService;
 import org.github.mitallast.taskflow.rest.RestController;
-import org.github.mitallast.taskflow.scheduler.DagRunExecutor;
+import org.github.mitallast.taskflow.executor.DagRunExecutor;
 
 public class DagRunController {
 

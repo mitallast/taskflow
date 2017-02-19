@@ -1,17 +1,17 @@
-package org.github.mitallast.taskflow.scheduler;
+package org.github.mitallast.taskflow.executor;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.github.mitallast.taskflow.dag.*;
-import org.github.mitallast.taskflow.scheduler.command.*;
+import org.github.mitallast.taskflow.executor.command.*;
 
 import static org.github.mitallast.taskflow.common.Immutable.map;
 
-public class DagRunScheduler {
+public class DagRunProcessor {
 
     private final static Logger logger = LogManager.getLogger();
 
-    public Command schedule(Dag dag, DagRun dagRun) {
+    public Command process(Dag dag, DagRun dagRun) {
         logger.info("dag run {} status {}", dagRun.id(), dagRun.status());
         switch (dagRun.status()) {
             case PENDING:

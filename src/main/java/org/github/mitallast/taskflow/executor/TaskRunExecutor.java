@@ -1,4 +1,4 @@
-package org.github.mitallast.taskflow.scheduler;
+package org.github.mitallast.taskflow.executor;
 
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
@@ -9,7 +9,6 @@ import org.github.mitallast.taskflow.operation.OperationResult;
 import org.github.mitallast.taskflow.operation.OperationService;
 import org.github.mitallast.taskflow.operation.OperationStatus;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.*;
 

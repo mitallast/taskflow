@@ -1,4 +1,4 @@
-package org.github.mitallast.taskflow.scheduler;
+package org.github.mitallast.taskflow.executor;
 
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.ConfigFactory;
@@ -6,7 +6,7 @@ import org.github.mitallast.taskflow.common.BaseTest;
 import org.github.mitallast.taskflow.dag.*;
 import org.github.mitallast.taskflow.operation.OperationCommand;
 import org.github.mitallast.taskflow.operation.OperationEnvironment;
-import org.github.mitallast.taskflow.scheduler.command.*;
+import org.github.mitallast.taskflow.executor.command.*;
 import org.joda.time.DateTime;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,9 +20,9 @@ import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 
 @RunWith(Parameterized.class)
-public class DagRunSchedulerTest extends BaseTest {
+public class DagRunProcessorTest extends BaseTest {
 
-    private static final DagRunScheduler scheduler = new DagRunScheduler();
+    private static final DagRunProcessor processor = new DagRunProcessor();
 
     private static final DateTime created = new DateTime();
 
@@ -131,7 +131,7 @@ public class DagRunSchedulerTest extends BaseTest {
     private final DagRun testDagRun;
     private final Command expected;
 
-    public DagRunSchedulerTest(Dag dag, DagRun dagRun, Command expected) {
+    public DagRunProcessorTest(Dag dag, DagRun dagRun, Command expected) {
         this.testDag = dag;
         this.testDagRun = dagRun;
         this.expected = expected;
@@ -139,7 +139,7 @@ public class DagRunSchedulerTest extends BaseTest {
 
     @Test
     public void testScheduler() throws Exception {
-        Command cmd = scheduler.schedule(testDag, testDagRun);
+        Command cmd = processor.process(testDag, testDagRun);
         assertThat(cmd, is(instanceOf(expected.getClass())));
 
         if (expected instanceof TaskRunCommand) {

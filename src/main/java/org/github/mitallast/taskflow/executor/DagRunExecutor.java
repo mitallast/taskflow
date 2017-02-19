@@ -1,4 +1,4 @@
-package org.github.mitallast.taskflow.scheduler;
+package org.github.mitallast.taskflow.executor;
 
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
@@ -6,7 +6,7 @@ import org.github.mitallast.taskflow.common.component.AbstractLifecycleComponent
 import org.github.mitallast.taskflow.dag.*;
 import org.github.mitallast.taskflow.operation.OperationResult;
 import org.github.mitallast.taskflow.operation.OperationStatus;
-import org.github.mitallast.taskflow.scheduler.command.*;
+import org.github.mitallast.taskflow.executor.command.*;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -16,7 +16,7 @@ import java.util.concurrent.Executors;
 public class DagRunExecutor extends AbstractLifecycleComponent {
 
     private final DagPersistenceService persistenceService;
-    private final DagRunScheduler dagRunScheduler;
+    private final DagRunProcessor dagRunScheduler;
     private final TaskRunExecutor taskRunExecutor;
 
     private final ExecutorService executorService;
@@ -25,7 +25,7 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
     public DagRunExecutor(
         Config config,
         DagPersistenceService persistenceService,
-        DagRunScheduler dagRunScheduler,
+        DagRunProcessor dagRunScheduler,
         TaskRunExecutor taskRunExecutor
     ) {
         super(config, DagRunExecutor.class);
@@ -71,7 +71,7 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
     }
 
     public void schedule(long dagRunId) {
-        logger.info("schedule {}", dagRunId);
+        logger.info("process {}", dagRunId);
         executorService.execute(() -> process(dagRunId));
     }
 
@@ -100,7 +100,7 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
     }
 
     private void process(final Dag dag, final DagRun dagRun) {
-        final Command cmd = dagRunScheduler.schedule(dag, dagRun);
+        final Command cmd = dagRunScheduler.process(dag, dagRun);
         if (cmd instanceof DagRunCommand) {
             handle((DagRunCommand) cmd);
         } else if (cmd instanceof TaskRunCommand) {
