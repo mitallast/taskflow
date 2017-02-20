@@ -5,6 +5,7 @@ import org.github.mitallast.taskflow.common.error.MaybeErrors;
 import org.github.mitallast.taskflow.operation.OperationResult;
 
 public interface DagService {
+
     Errors validate(Dag dag);
 
     MaybeErrors<Dag> createDag(Dag dag);

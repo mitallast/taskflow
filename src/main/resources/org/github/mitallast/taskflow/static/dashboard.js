@@ -41,6 +41,10 @@
                 templateUrl: '/dag-run-state.html',
                 controller: 'DagRunIdCtrl'
             })
+            .when('/dag/schedule', {
+                templateUrl: '/dag-schedule.html',
+                controller: 'DagScheduleCtrl'
+            })
             .when('/operations', {
                 templateUrl: '/operations.html',
                 controller: 'OperationsController'
@@ -53,13 +57,14 @@
         $scope.menus = [
             [
                 {href:'dag/latest', title:'Dag latest'},
-                {href:'dag/id/1', title:'Dag 1'},
                 {href:'dag/create', title:'Create Dag'},
+            ],
+            [
+                {href:'dag/schedule', title:'Dag schedule'},
             ],
             [
                 {href:'dag/run', title:'Dag run'},
                 {href:'dag/run/pending', title:'Dag run pending'},
-                {href:'dag/run/id/1', title:'Dag run 1'},
             ],
             [
                 {href:'operations', title:'Operations'},
@@ -247,6 +252,50 @@
                 }
             });
         };
+        $scope.load();
+    })
+    .controller('DagScheduleCtrl', function($scope, $http) {
+        $scope.schedules = [];
+        $scope.edit = function(schedule){
+            schedule.edit = true;
+        };
+        $scope.update = function(schedule){
+            console.log(schedule);
+            $http.put('/api/dag/schedule', {
+                token: schedule.token,
+                enabled: schedule.enabled,
+                cronExpression: schedule.cronExpression,
+            })
+            .then(
+                function(response) {
+                    schedule.edit = false;
+                    $scope.load();
+                },
+                function(response){
+                    schedule.errors = response.data;
+                }
+            )
+        };
+        $scope.enableSchedule = function(schedule){
+            console.log('enableSchedule', schedule)
+            $http.put('/api/dag/token/' + schedule.token + '/schedule/enable')
+            .then(function(){
+                $scope.load();
+            })
+        };
+        $scope.disableSchedule = function(schedule){
+            console.log('disableSchedule', schedule)
+            $http.put('/api/dag/token/' + schedule.token + '/schedule/disable')
+            .then(function(){
+                $scope.load();
+            })
+        };
+        $scope.load = function() {
+            $http.get('/api/dag/schedule')
+            .then(function(response){
+                $scope.schedules = response.data;
+            });
+        }
         $scope.load();
     })
     .controller('OperationsController', function($scope, $http){

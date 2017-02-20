@@ -76,6 +76,10 @@ public class JsonService extends AbstractComponent {
         }
     }
 
+    public <T> T deserialize(String data, Class<T> type) {
+        return deserialize(data, type);
+    }
+
     public <T> T deserialize(ByteBuf buf, Class<T> type) {
         try (InputStream input = new ByteBufInputStream(buf)) {
             return deserialize(input, type);
@@ -87,6 +91,14 @@ public class JsonService extends AbstractComponent {
     public <T> T deserialize(InputStream input, Class<T> type) {
         try {
             return mapper.readValue(input, type);
+        } catch (IOException e) {
+            throw new IOError(e);
+        }
+    }
+
+    public <T> T deserialize(String data, TypeReference<T> type) {
+        try {
+            return mapper.readValue(data, type);
         } catch (IOException e) {
             throw new IOError(e);
         }

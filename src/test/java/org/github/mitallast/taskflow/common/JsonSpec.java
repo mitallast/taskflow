@@ -1,4 +1,4 @@
-package org.github.mitallast.taskflow.common.org.github.mitallast.taskflow.dag;
+package org.github.mitallast.taskflow.common;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

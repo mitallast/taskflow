@@ -98,3 +98,7 @@ body {
         stroke-width: 0.5px
     }
 }
+
+.expression {
+    border: 1px solid #ccc;
+}

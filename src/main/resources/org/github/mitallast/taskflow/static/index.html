@@ -369,6 +369,61 @@
     <div class="gantt" diagram-gantt="dag_run"></div>
 </script>
 
+<script type="text/ng-template" id="/dag-schedule.html">
+    <h2 class="page-header">DAG schedule</h2>
+
+    <table class="table table-stripped">
+        <thead>
+        <tr>
+            <th>dag</th>
+            <th>enabled</th>
+            <th>cron expression</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="schedule in schedules">
+            <td>
+                <a href="#dag/run/token/{{schedule.token}}" class="btn btn-sm btn-default">{{schedule.token}}</a>
+            </td>
+            <td>
+                {{schedule.enabled}}
+            </td>
+            <td>
+                <div>
+                    <div ng-show="!schedule.edit" ng-click="edit(schedule)" class="input-sm expression">{{schedule.cronExpression}}&nbsp;</div>
+                    <form class="form-horizontal" ng-show="schedule.edit" ng-submit="update(schedule)">
+                        <div class="form-group" ng-class="{'has-error':schedule.errors.cronExpression}">
+                            <div class="input-group">
+                                <input ng-model="schedule.cronExpression" required class="form-control input-sm" placeholder="* * * * *">
+                                <span class="input-group-btn">
+                                    <button class="btn btn-sm btn-default" type="submit">
+                                        <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+                                    </button>
+                                </span>
+                            </div>
+                            <span class="help-block" ng-show="schedule.errors.cronExpression">{{schedule.errors.cronExpression}}</span>
+                        </div>
+                    </form>
+                </div>
+            </td>
+            <td>
+                <a href="#dag/run/token/{{schedule.token}}" class="btn btn-sm btn-default">view</a>
+                <button class="btn btn-sm btn-default" ng-show="!schedule.enabled" ng-click="enableSchedule(schedule)">
+                    enable
+                </button>
+                <button class="btn btn-sm btn-default" ng-show="schedule.enabled" ng-click="disableSchedule(schedule)">
+                    disable
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</script>
+<script>
+
+</script>
+
 <script type="text/ng-template" id="/operations.html">
     <h2 class="page-header">Operations</h2>
 

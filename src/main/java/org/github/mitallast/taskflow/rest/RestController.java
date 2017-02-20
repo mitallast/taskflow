@@ -315,7 +315,7 @@ public class RestController extends AbstractComponent {
         private final FunctionBuilder<R> builder;
 
         public FunctionResponseMapper(FunctionHandler<R> handler) {
-            this(responseMapper -> new FunctionMapper<>(handler, responseMapper));
+            this.builder = responseMapper -> new FunctionMapper<>(handler, responseMapper);
         }
 
         public FunctionResponseMapper(FunctionBuilder<R> builder) {

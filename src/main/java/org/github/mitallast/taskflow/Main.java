@@ -13,6 +13,7 @@ import org.github.mitallast.taskflow.operation.*;
 import org.github.mitallast.taskflow.persistence.PersistenceModule;
 import org.github.mitallast.taskflow.rest.RestModule;
 import org.github.mitallast.taskflow.executor.ExecutorModule;
+import org.github.mitallast.taskflow.scheduler.SchedulerModule;
 
 import java.io.IOException;
 
@@ -29,6 +30,7 @@ public class Main {
         modules.add(new OperationModule());
         modules.add(new DagModule());
         modules.add(new ExecutorModule());
+        modules.add(new SchedulerModule());
         modules.add(new RestModule());
         modules.add(new AwsModule());
 
