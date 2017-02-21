@@ -1,22 +1,17 @@
 package org.github.mitallast.taskflow.scheduler;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import org.github.mitallast.taskflow.common.component.AbstractLifecycleComponent;
 import org.github.mitallast.taskflow.common.error.Errors;
 import org.github.mitallast.taskflow.common.error.MaybeErrors;
-import org.github.mitallast.taskflow.dag.Dag;
-import org.github.mitallast.taskflow.dag.DagPersistenceService;
-import org.github.mitallast.taskflow.dag.DagSchedule;
-import org.github.mitallast.taskflow.dag.DagService;
+import org.github.mitallast.taskflow.dag.*;
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class DagSchedulerService extends AbstractLifecycleComponent {
 
@@ -25,7 +20,7 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
     private final DagPersistenceService persistenceService;
     private final DagService dagService;
 
-    private volatile ScheduledFuture task;
+    private final ConcurrentMap<String, ScheduledFuture> tasks;
 
     @Inject
     public DagSchedulerService(
@@ -39,6 +34,7 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
         this.persistenceService = persistenceService;
         this.dagService = dagService;
 
+        this.tasks = new ConcurrentHashMap<>();
         this.executorService = Executors.newSingleThreadScheduledExecutor();
     }
 
@@ -91,47 +87,45 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
     }
 
     private void schedule() {
-        executorService.execute(this::doSchedule);
-    }
-
-    private void doSchedule() {
-        logger.info("schedule dag run");
-        try {
-            DagSchedule schedule = null;
-            Duration scheduleDuration = null;
-
+        executorService.execute(() -> {
+            logger.info("schedule dag run");
             for (DagSchedule item : persistenceService.findEnabledDagSchedules()) {
-                Duration itemDuration = schedulerService.scheduleNext(item.cronExpression());
-                if (schedule == null || scheduleDuration.toMillis() > itemDuration.toMillis()) {
-                    schedule = item;
-                    scheduleDuration = itemDuration;
+                try {
+                    schedule(item);
+                } catch (Exception e) {
+                    logger.warn("error schedule dag run", e);
                 }
             }
-
-            if (schedule != null && scheduleDuration != null) {
-                doSchedule(schedule, scheduleDuration);
-            }
-        } catch (Exception e) {
-            logger.warn("error schedule dag run", e);
-        }
+        });
     }
 
-    private void doSchedule(DagSchedule schedule, Duration scheduleDuration) {
-        logger.info("schedule dag {} in {}", schedule.token(), scheduleDuration);
-        if (task != null) {
-            task.cancel(false);
-            task = null;
-        }
-        task = executorService.schedule(() -> {
-            task = null;
+    private void schedule(DagSchedule schedule) {
+        cancel(schedule.token());
+        Duration duration = schedulerService.scheduleNext(schedule.cronExpression());
+        logger.info("schedule dag {} in {}", schedule.token(), duration);
+        ScheduledFuture future = executorService.schedule(() -> {
             Optional<Dag> dag = persistenceService.findDagByToken(schedule.token());
             if (dag.isPresent()) {
-                dagService.createDagRun(dag.get());
+                ImmutableList<DagRun> pending = persistenceService.findPendingDagRunsByDag(dag.get().id());
+                if (pending.isEmpty()) {
+                    dagService.createDagRun(dag.get());
+                } else {
+                    logger.info("pending dag run {} exists", dag.get().token());
+                }
             } else {
                 logger.warn("dag {} not found", schedule.token());
             }
-            schedule();
-        }, scheduleDuration.toMillis(), TimeUnit.MILLISECONDS);
+            schedule(schedule);
+        }, duration.toMillis(), TimeUnit.MILLISECONDS);
+        tasks.put(schedule.token(), future);
+    }
+
+    private void cancel(String token) {
+        logger.info("cancel dag run schedule {}", token);
+        ScheduledFuture task = tasks.remove(token);
+        if (task != null) {
+            task.cancel(false);
+        }
     }
 
     @Override

@@ -23,6 +23,8 @@ public interface DagPersistenceService {
 
     ImmutableList<DagRun> findPendingDagRuns();
 
+    ImmutableList<DagRun> findPendingDagRunsByDag(long dagId);
+
     Optional<DagRun> findDagRun(long id);
 
     boolean startDagRun(long id);

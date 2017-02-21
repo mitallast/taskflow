@@ -360,6 +360,40 @@ public class DefaultDagPersistenceService extends AbstractComponent implements D
     }
 
     @Override
+    public ImmutableList<DagRun> findPendingDagRunsByDag(long dagId) {
+        try (DSLContext context = persistence.context()) {
+            List<DagRun> dagRunList = context.selectFrom(table.dag_run)
+                .where(
+                    field.status.in(DagRunStatus.PENDING.name(), DagRunStatus.RUNNING.name()),
+                    field.dag_id.eq(dagId)
+                )
+                .fetch()
+                .map(record -> dagRun(record, ImmutableList.of()));
+
+            List<Long> ids = dagRunList.stream().map(DagRun::id).collect(Collectors.toList());
+            Map<Long, ImmutableList.Builder<TaskRun>> taskRunMap = new HashMap<>();
+            context.selectFrom(table.task_run)
+                .where(field.dag_run_id.in(ids))
+                .orderBy(field.id.desc())
+                .fetch()
+                .forEach(record -> taskRunMap.computeIfAbsent(record.get(field.dag_run_id), t -> new ImmutableList.Builder<>()).add(taskRun(record)));
+
+            ImmutableList.Builder<DagRun> dagRuns = ImmutableList.builder();
+            dagRunList.forEach(dagRun -> dagRuns.add(new DagRun(
+                dagRun.id(),
+                dagRun.dagId(),
+                dagRun.createdDate(),
+                dagRun.startDate(),
+                dagRun.finishDate(),
+                dagRun.status(),
+                taskRunMap.computeIfAbsent(dagRun.id(), t -> new ImmutableList.Builder<>()).build()
+            )));
+
+            return dagRuns.build();
+        }
+    }
+
+    @Override
     public Optional<DagRun> findDagRun(long id) {
         try (DSLContext context = persistence.context()) {
             return context.selectFrom(table.dag_run)
