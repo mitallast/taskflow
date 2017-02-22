@@ -3,8 +3,8 @@ package org.github.mitallast.taskflow.rest.handler;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.github.mitallast.taskflow.dag.DagPersistenceService;
 import org.github.mitallast.taskflow.dag.DagSchedule;
+import org.github.mitallast.taskflow.dag.DagSchedulePersistenceService;
 import org.github.mitallast.taskflow.rest.RestController;
 import org.github.mitallast.taskflow.scheduler.DagSchedulerService;
 
@@ -13,7 +13,7 @@ public class DagScheduleController {
     @Inject
     public DagScheduleController(
         RestController controller,
-        DagPersistenceService persistenceService,
+        DagSchedulePersistenceService persistenceService,
         DagSchedulerService schedulerService
     ) {
 

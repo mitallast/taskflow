@@ -9,16 +9,16 @@ import static org.github.mitallast.taskflow.common.Immutable.append;
 
 public class DagRun {
     private final long id;
-    private final long dagId;
+    private final Dag dag;
     private final DateTime createdDate;
     private final DateTime startDate;
     private final DateTime finishDate;
     private final DagRunStatus status;
     private final ImmutableList<TaskRun> tasks;
 
-    public DagRun(long id, long dagId, DateTime createdDate, DateTime startDate, DateTime finishDate, DagRunStatus status, ImmutableList<TaskRun> tasks) {
+    public DagRun(long id, Dag dag, DateTime createdDate, DateTime startDate, DateTime finishDate, DagRunStatus status, ImmutableList<TaskRun> tasks) {
         this.id = id;
-        this.dagId = dagId;
+        this.dag = dag;
         this.createdDate = createdDate;
         this.startDate = startDate;
         this.finishDate = finishDate;
@@ -30,8 +30,8 @@ public class DagRun {
         return id;
     }
 
-    public long dagId() {
-        return dagId;
+    public Dag dag() {
+        return dag;
     }
 
     public DateTime createdDate() {
@@ -58,7 +58,7 @@ public class DagRun {
         Preconditions.checkArgument(status == DagRunStatus.PENDING);
         Preconditions.checkArgument(startDate == null);
         Preconditions.checkArgument(finishDate == null);
-        return new DagRun(id, dagId, createdDate, new DateTime(), null, DagRunStatus.RUNNING, tasks);
+        return new DagRun(id, dag, createdDate, new DateTime(), null, DagRunStatus.RUNNING, tasks);
     }
 
     public DagRun start(TaskRun... taskRuns) {
@@ -97,19 +97,18 @@ public class DagRun {
         Preconditions.checkArgument(status == DagRunStatus.RUNNING);
         Preconditions.checkNotNull(startDate);
         Preconditions.checkArgument(finishDate == null);
-        return new DagRun(id, dagId, createdDate, startDate, new DateTime(), DagRunStatus.SUCCESS, tasks);
+        return new DagRun(id, dag, createdDate, startDate, new DateTime(), DagRunStatus.SUCCESS, tasks);
     }
 
     public DagRun update(TaskRun taskRun) {
         Preconditions.checkNotNull(taskRun);
         Preconditions.checkArgument(tasks.stream().anyMatch(t -> t.id() == taskRun.id()));
-        return new DagRun(id, dagId, createdDate, startDate, finishDate, DagRunStatus.RUNNING, replace(tasks, t -> t.id() == taskRun.id(), taskRun));
+        return new DagRun(id, dag, createdDate, startDate, finishDate, DagRunStatus.RUNNING, replace(tasks, t -> t.id() == taskRun.id(), taskRun));
     }
 
     public DagRun retry(TaskRun taskRun) {
         Preconditions.checkNotNull(taskRun);
         Preconditions.checkArgument(tasks.stream().noneMatch(t -> t.id() == taskRun.id()));
-        return new DagRun(id, dagId, createdDate, startDate, finishDate, DagRunStatus.RUNNING, append(tasks, taskRun));
-
+        return new DagRun(id, dag, createdDate, startDate, finishDate, DagRunStatus.RUNNING, append(tasks, taskRun));
     }
 }

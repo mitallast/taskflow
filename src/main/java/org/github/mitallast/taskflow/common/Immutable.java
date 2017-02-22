@@ -6,14 +6,20 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 public final class Immutable {
     private Immutable() {
+    }
+
+    public static <T> Optional<T> headOpt(List<T> values) {
+        if (values.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(values.get(0));
+        }
     }
 
     public static <K, V> ImmutableListMultimap<K, V> groupList(Collection<V> values, Function<V, K> mapper) {
@@ -57,7 +63,7 @@ public final class Immutable {
         return builder.build();
     }
 
-    public static <V, T> ImmutableList<T> map(ImmutableList<V> list, Function<V, T> mapper) {
+    public static <V, T> ImmutableList<T> map(Collection<V> list, Function<V, T> mapper) {
         ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (V v : list) {
             builder.add(mapper.apply(v));

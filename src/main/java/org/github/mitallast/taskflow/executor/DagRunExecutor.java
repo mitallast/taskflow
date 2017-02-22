@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 
 public class DagRunExecutor extends AbstractLifecycleComponent {
 
-    private final DagPersistenceService persistenceService;
+    private final DagRunPersistenceService persistenceService;
     private final DagRunProcessor dagRunScheduler;
     private final TaskRunExecutor taskRunExecutor;
 
@@ -24,7 +24,7 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
     @Inject
     public DagRunExecutor(
         Config config,
-        DagPersistenceService persistenceService,
+        DagRunPersistenceService persistenceService,
         DagRunProcessor dagRunScheduler,
         TaskRunExecutor taskRunExecutor
     ) {
@@ -84,14 +84,7 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
                 return;
             }
             DagRun dagRun = dagRunOpt.get();
-
-            Optional<Dag> dagOpt = persistenceService.findDagById(dagRun.dagId());
-            if (!dagOpt.isPresent()) {
-                logger.warn("dag not found: {}", dagRun);
-                persistenceService.markDagRunFailed(dagRunId);
-                return;
-            }
-            Dag dag = dagOpt.get();
+            Dag dag = dagRun.dag();
 
             process(dag, dagRun);
         } catch (Exception e) {

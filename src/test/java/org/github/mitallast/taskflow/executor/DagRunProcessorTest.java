@@ -52,7 +52,7 @@ public class DagRunProcessorTest extends BaseTest {
 
     private static final ImmutableList<TaskRun> taskRuns = ImmutableList.of(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE);
 
-    private static final DagRun dagRun = new DagRun(1, 1, created, null, null, DagRunStatus.PENDING, taskRuns);
+    private static final DagRun dagRun = new DagRun(1, dag, created, null, null, DagRunStatus.PENDING, taskRuns);
 
     @Parameterized.Parameters
     public static Collection<Object[]> cases() {
@@ -103,7 +103,7 @@ public class DagRunProcessorTest extends BaseTest {
             {dag, dagRun.start().failure(taskRunA, taskRunB).retry(taskRunA2), new RetryTaskRunCommand(taskRunB)},
             {dag, dagRun.start().failure(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE).retry(taskRunA2), new RetryTaskRunCommand(taskRunB)},
             {dag, dagRun.start().failure(taskRunA).retry(taskRunA2).retry(taskRunA3).failure(taskRunA2, taskRunA3), new CancelTaskRunCommand(taskRunB)},
-            {dag, dagRun.start().failure(taskRunA).retry(taskRunA2).retry(taskRunA3).failure(taskRunA2, taskRunA3).success(taskRunB,taskRunC,taskRunD,taskRunE), new FailedDagRunCommand(dagRun)},
+            {dag, dagRun.start().failure(taskRunA).retry(taskRunA2).retry(taskRunA3).failure(taskRunA2, taskRunA3).success(taskRunB, taskRunC, taskRunD, taskRunE), new FailedDagRunCommand(dagRun)},
 
             // check cancel
             {dag, dagRun.start().cancel(taskRunA), new CancelTaskRunCommand(taskRunB)},

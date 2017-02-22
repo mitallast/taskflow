@@ -16,6 +16,10 @@ public class Dag {
     private final String token;
     private final ImmutableList<Task> tasks;
 
+    public Dag(long id) {
+        this(id, 0, null, null);
+    }
+
     public Dag(String token, Task... tasks) {
         this(token, ImmutableList.copyOf(tasks));
     }

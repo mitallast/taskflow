@@ -3,7 +3,7 @@ package org.github.mitallast.taskflow.rest.handler;
 import com.google.inject.Inject;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.github.mitallast.taskflow.dag.DagPersistenceService;
+import org.github.mitallast.taskflow.dag.DagRunPersistenceService;
 import org.github.mitallast.taskflow.rest.RestController;
 import org.github.mitallast.taskflow.executor.DagRunExecutor;
 
@@ -14,7 +14,7 @@ public class DagRunController {
     @Inject
     public DagRunController(
         RestController controller,
-        DagPersistenceService persistenceService,
+        DagRunPersistenceService persistenceService,
         DagRunExecutor dagRunExecutor
     ) {
         this.dagRunExecutor = dagRunExecutor;

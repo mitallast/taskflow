@@ -17,7 +17,9 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
 
     private final SchedulerService schedulerService;
     private final ScheduledExecutorService executorService;
-    private final DagPersistenceService persistenceService;
+    private final DagPersistenceService dagPersistence;
+    private final DagRunPersistenceService dagRunPersistence;
+    private final DagSchedulePersistenceService dagSchedulePersistence;
     private final DagService dagService;
 
     private final ConcurrentMap<String, ScheduledFuture> tasks;
@@ -26,12 +28,16 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
     public DagSchedulerService(
         Config config,
         SchedulerService schedulerService,
-        DagPersistenceService persistenceService,
+        DagPersistenceService dagPersistence,
+        DagRunPersistenceService dagRunPersistence,
+        DagSchedulePersistenceService dagSchedulePersistence,
         DagService dagService
     ) {
         super(config, DagSchedulerService.class);
         this.schedulerService = schedulerService;
-        this.persistenceService = persistenceService;
+        this.dagPersistence = dagPersistence;
+        this.dagRunPersistence = dagRunPersistence;
+        this.dagSchedulePersistence = dagSchedulePersistence;
         this.dagService = dagService;
 
         this.tasks = new ConcurrentHashMap<>();
@@ -56,7 +62,7 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
 
     public boolean markDagScheduleEnabled(String token) {
         logger.info("enable {}", token);
-        if (persistenceService.markDagScheduleEnabled(token)) {
+        if (dagSchedulePersistence.markDagScheduleEnabled(token)) {
             schedule();
             return false;
         } else {
@@ -66,7 +72,7 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
 
     public boolean markDagScheduleDisabled(String token) {
         logger.info("disable {}", token);
-        if (persistenceService.markDagScheduleDisabled(token)) {
+        if (dagSchedulePersistence.markDagScheduleDisabled(token)) {
             schedule();
             return false;
         } else {
@@ -77,7 +83,7 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
     public MaybeErrors<Boolean> update(DagSchedule dagSchedule) {
         logger.info("update {}", dagSchedule);
         return validate(dagSchedule).maybe(() -> {
-            if (persistenceService.updateSchedule(dagSchedule)) {
+            if (dagSchedulePersistence.updateSchedule(dagSchedule)) {
                 schedule();
                 return true;
             } else {
@@ -89,7 +95,7 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
     private void schedule() {
         executorService.execute(() -> {
             logger.info("schedule dag run");
-            for (DagSchedule item : persistenceService.findEnabledDagSchedules()) {
+            for (DagSchedule item : dagSchedulePersistence.findEnabledDagSchedules()) {
                 try {
                     schedule(item);
                 } catch (Exception e) {
@@ -104,9 +110,9 @@ public class DagSchedulerService extends AbstractLifecycleComponent {
         Duration duration = schedulerService.scheduleNext(schedule.cronExpression());
         logger.info("schedule dag {} in {}", schedule.token(), duration);
         ScheduledFuture future = executorService.schedule(() -> {
-            Optional<Dag> dag = persistenceService.findDagByToken(schedule.token());
+            Optional<Dag> dag = dagPersistence.findDagByToken(schedule.token());
             if (dag.isPresent()) {
-                ImmutableList<DagRun> pending = persistenceService.findPendingDagRunsByDag(dag.get().id());
+                ImmutableList<DagRun> pending = dagRunPersistence.findPendingDagRunsByDag(dag.get().id());
                 if (pending.isEmpty()) {
                     dagService.createDagRun(dag.get());
                 } else {

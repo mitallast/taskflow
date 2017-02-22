@@ -252,7 +252,7 @@
         <thead>
         <tr>
             <th>id</th>
-            <th>dagId</th>
+            <th>dag</th>
             <th>created</th>
             <th>start</th>
             <th>finish</th>
@@ -264,7 +264,7 @@
         <tbody>
         <tr ng-repeat="run in runs">
             <td>{{run.id}}</td>
-            <td>{{run.dagId}}</td>
+            <td>{{run.dag.token}} #{{run.dag.version}}</td>
             <td>{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
@@ -284,7 +284,7 @@
         <thead>
         <tr>
             <th>id</th>
-            <th>dagId</th>
+            <th>dag</th>
             <th>created</th>
             <th>start</th>
             <th>finish</th>
@@ -296,7 +296,7 @@
         <tbody>
         <tr ng-repeat="run in runs">
             <td>{{run.id}}</td>
-            <td>{{run.dagId}}</td>
+            <td>{{run.dag.token}} #{{run.dag.version}}</td>
             <td>{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
@@ -318,7 +318,7 @@
 
     <p>id: {{dag_run.id}}</p>
 
-    <p>dag_id: {{dag_run.dagId}}</p>
+    <p>dag: {{dag_run.dag.token}} #{{run.dag.version}}</p>
 
     <p>created: {{dag_run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</p>
 

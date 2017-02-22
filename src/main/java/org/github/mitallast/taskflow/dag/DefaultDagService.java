@@ -18,7 +18,8 @@ import org.jgrapht.graph.DefaultEdge;
 
 public class DefaultDagService extends AbstractComponent implements DagService {
 
-    private final DagPersistenceService persistenceService;
+    private final DagPersistenceService dagPersistence;
+    private final DagRunPersistenceService dagRunPersistence;
     private final DagRunExecutor dagRunExecutor;
     private final OperationService operationService;
     private final JsonService jsonService;
@@ -26,13 +27,15 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     @Inject
     public DefaultDagService(
         Config config,
-        DagPersistenceService persistenceService,
+        DagPersistenceService dagPersistence,
+        DagRunPersistenceService dagRunPersistence,
         DagRunExecutor dagRunExecutor,
         OperationService operationService,
         JsonService jsonService
     ) {
         super(config, DagService.class);
-        this.persistenceService = persistenceService;
+        this.dagPersistence = dagPersistence;
+        this.dagRunPersistence = dagRunPersistence;
         this.dagRunExecutor = dagRunExecutor;
         this.operationService = operationService;
         this.jsonService = jsonService;
@@ -115,25 +118,25 @@ public class DefaultDagService extends AbstractComponent implements DagService {
 
     @Override
     public MaybeErrors<Dag> createDag(Dag dag) {
-        return validate(dag).maybe(() -> persistenceService.createDag(dag));
+        return validate(dag).maybe(() -> dagPersistence.createDag(dag));
     }
 
     @Override
     public MaybeErrors<Dag> updateDag(Dag dag) {
-        return validate(dag).maybe(() -> persistenceService.updateDag(dag));
+        return validate(dag).maybe(() -> dagPersistence.updateDag(dag));
     }
 
     @Override
     public DagRun createDagRun(Dag dag) {
         Preconditions.checkNotNull(dag);
-        DagRun dagRun = persistenceService.createDagRun(dag);
+        DagRun dagRun = dagRunPersistence.createDagRun(dag);
         dagRunExecutor.schedule(dagRun.id());
         return dagRun;
     }
 
     @Override
     public boolean markTaskRunSuccess(TaskRun taskRun, OperationResult operationResult) {
-        if (persistenceService.markTaskRunSuccess(taskRun.id(), operationResult)) {
+        if (dagRunPersistence.markTaskRunSuccess(taskRun.id(), operationResult)) {
             dagRunExecutor.schedule(taskRun.dagRunId());
             return true;
         } else {
@@ -143,7 +146,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
 
     @Override
     public boolean markTaskRunFailed(TaskRun taskRun, OperationResult operationResult) {
-        if (persistenceService.markTaskRunFailed(taskRun.id(), operationResult)) {
+        if (dagRunPersistence.markTaskRunFailed(taskRun.id(), operationResult)) {
             dagRunExecutor.schedule(taskRun.dagRunId());
             return true;
         } else {
@@ -153,7 +156,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
 
     @Override
     public boolean markTaskRunCanceled(TaskRun taskRun) {
-        if (persistenceService.markTaskRunCanceled(taskRun.id())) {
+        if (dagRunPersistence.markTaskRunCanceled(taskRun.id())) {
             dagRunExecutor.schedule(taskRun.dagRunId());
             return true;
         } else {
