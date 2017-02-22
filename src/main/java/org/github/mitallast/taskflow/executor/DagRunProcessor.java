@@ -11,7 +11,8 @@ public class DagRunProcessor {
 
     private final static Logger logger = LogManager.getLogger();
 
-    public Command process(Dag dag, DagRun dagRun) {
+    public Command process(DagRun dagRun) {
+        Dag dag = dagRun.dag();
         logger.info("dag run {} status {}", dagRun.id(), dagRun.status());
         switch (dagRun.status()) {
             case PENDING:

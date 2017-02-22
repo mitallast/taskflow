@@ -52,7 +52,7 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
         cancel(dagRun);
     }
 
-    private void cancel(final DagRun dagRun) {
+    private void cancel(DagRun dagRun) {
         if (dagRun.status() == DagRunStatus.PENDING || dagRun.status() == DagRunStatus.RUNNING) {
             for (TaskRun taskRun : dagRun.tasks()) {
                 if (taskRun.status() == TaskRunStatus.PENDING) {
@@ -84,16 +84,14 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
                 return;
             }
             DagRun dagRun = dagRunOpt.get();
-            Dag dag = dagRun.dag();
-
-            process(dag, dagRun);
+            process(dagRun);
         } catch (Exception e) {
             logger.warn("unexpected exception", e);
         }
     }
 
-    private void process(final Dag dag, final DagRun dagRun) {
-        final Command cmd = dagRunScheduler.process(dag, dagRun);
+    private void process(DagRun dagRun) {
+        final Command cmd = dagRunScheduler.process(dagRun);
         if (cmd instanceof DagRunCommand) {
             handle((DagRunCommand) cmd);
         } else if (cmd instanceof TaskRunCommand) {
