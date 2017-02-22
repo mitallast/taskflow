@@ -111,7 +111,7 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                     tasks.add(new TaskRun(
                         taskRunId,
                         dag.id(),
-                        task.id(),
+                        task,
                         dagRunId,
                         createdDate,
                         null,
@@ -167,16 +167,17 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                 .fetch()
                 .map(record -> dagRun(record, new Dag(record.get(field.dag_id)), ImmutableList.of()));
 
+            List<Dag> dags = dagPersistence.findDagByIds(map(map(dagRunList, DagRun::dag), Dag::id));
+            Map<Long, Dag> dagMap = group(dags, Dag::id);
+            Map<Long, Task> taskMap = group(flatMap(dags, Dag::tasks), Task::id);
+
             ImmutableListMultimap.Builder<Long, TaskRun> taskRunBuilder = ImmutableListMultimap.builder();
             context.selectFrom(table.task_run)
                 .where(field.dag_run_id.in(map(dagRunList, DagRun::id)))
                 .orderBy(field.id.desc())
                 .fetch()
-                .forEach(record -> taskRunBuilder.put(record.get(field.dag_run_id), taskRun(record)));
+                .forEach(record -> taskRunBuilder.put(record.get(field.dag_run_id), taskRun(record, taskMap.get(record.get(field.task_id)))));
             ImmutableListMultimap<Long, TaskRun> taskRunMap = taskRunBuilder.build();
-
-            List<Dag> dags = dagPersistence.findDagByIds(map(map(dagRunList, DagRun::dag), Dag::id));
-            Map<Long, Dag> dagMap = group(dags, Dag::id);
 
             ImmutableList.Builder<DagRun> dagRuns = ImmutableList.builder();
             dagRunList.forEach(dagRun -> dagRuns.add(new DagRun(
@@ -267,7 +268,7 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
     public TaskRun retry(TaskRun taskRun) {
         try (DSLContext tr = persistence.context()) {
             return tr.transactionResult(conf -> {
-                logger.info("retry task run", taskRun.dagRunId(), taskRun.taskId());
+                logger.info("retry task run", taskRun.dagRunId(), taskRun.task().id());
 
                 DateTime createdDate = DateTime.now();
                 Timestamp created = new Timestamp(createdDate.getMillis());
@@ -285,7 +286,7 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                     .values(
                         sequence.task_run_seq.nextval(),
                         val(taskRun.dagId()),
-                        val(taskRun.taskId()),
+                        val(taskRun.task().id()),
                         val(taskRun.dagRunId()),
                         val(created),
                         val(TaskRunStatus.PENDING.name())
@@ -298,7 +299,7 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                 return new TaskRun(
                     taskRunId,
                     taskRun.dagId(),
-                    taskRun.taskId(),
+                    taskRun.task(),
                     taskRun.dagRunId(),
                     createdDate,
                     null,
@@ -386,11 +387,11 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
         }
     }
 
-    private TaskRun taskRun(Record record) {
+    private TaskRun taskRun(Record record, Task task) {
         return new TaskRun(
             record.get(field.id),
             record.get(field.dag_id),
-            record.get(field.task_id),
+            task,
             record.get(field.dag_run_id),
             date(record.get(field.created_date)),
             date(record.get(field.start_date)),

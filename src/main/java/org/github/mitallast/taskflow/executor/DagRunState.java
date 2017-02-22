@@ -42,16 +42,16 @@ public final class DagRunState {
         idTaskMap = group(dag.tasks(), Task::id);
         tokenTaskMap = group(dag.tasks(), Task::token);
 
-        idTaskRunMap = groupSorted(dagRun.tasks(), TaskRun::taskId);
+        idTaskRunMap = groupSorted(dagRun.tasks(), task -> task.task().id());
         idTaskRunLatestMap = reduce(idTaskRunMap, Immutable::last);
 
         buildTaskDag();
 
         for (Task task : dag.tasks()) {
-            Preconditions.checkArgument(idTaskRunMap.containsKey(task.id()), "Task " + task.id() + "does not contain runs");
+            Preconditions.checkArgument(idTaskRunMap.containsKey(task.id()), "Task " + task.id() + " does not contain runs");
         }
         for (TaskRun taskRun : dagRun.tasks()) {
-            Preconditions.checkArgument(idTaskMap.containsKey(taskRun.taskId()), "task runs illegal references to task " + taskRun.id());
+            Preconditions.checkArgument(idTaskMap.containsKey(taskRun.task().id()), "task runs illegal references to task " + taskRun.id());
         }
         // validate task run state - only one running|pending per task
         for (Long id : idTaskRunMap.keySet()) {
@@ -110,7 +110,7 @@ public final class DagRunState {
     }
 
     public TaskRunStatus taskRunDependsStatus(TaskRun taskRun) {
-        Task task = idTaskMap.get(taskRun.taskId());
+        Task task = idTaskMap.get(taskRun.task().id());
         return taskRunDependsStatus(task);
     }
 
@@ -120,7 +120,7 @@ public final class DagRunState {
     }
 
     public Task task(TaskRun taskRun) {
-        return idTaskMap.get(taskRun.taskId());
+        return idTaskMap.get(taskRun.task().id());
     }
 
     public ImmutableList<TaskRun> taskRuns(Task task) {
@@ -163,7 +163,7 @@ public final class DagRunState {
     }
 
     public ImmutableList<Task> depends(TaskRun taskRun) {
-        Task task = idTaskMap.get(taskRun.taskId());
+        Task task = idTaskMap.get(taskRun.task().id());
         return depends(task);
     }
 

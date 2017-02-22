@@ -41,14 +41,14 @@ public class DagRunProcessorTest extends BaseTest {
 
     private static final Dag dag = new Dag(1, 1, "dag", tasks);
 
-    private static final TaskRun taskRunA = new TaskRun(1, 1, 1, 1, created, null, null, TaskRunStatus.PENDING, null);
-    private static final TaskRun taskRunB = new TaskRun(2, 1, 2, 1, created, null, null, TaskRunStatus.PENDING, null);
-    private static final TaskRun taskRunC = new TaskRun(3, 1, 3, 1, created, null, null, TaskRunStatus.PENDING, null);
-    private static final TaskRun taskRunD = new TaskRun(4, 1, 4, 1, created, null, null, TaskRunStatus.PENDING, null);
-    private static final TaskRun taskRunE = new TaskRun(5, 1, 5, 1, created, null, null, TaskRunStatus.PENDING, null);
+    private static final TaskRun taskRunA = new TaskRun(1, 1, taskA, 1, created, null, null, TaskRunStatus.PENDING, null);
+    private static final TaskRun taskRunB = new TaskRun(2, 1, taskB, 1, created, null, null, TaskRunStatus.PENDING, null);
+    private static final TaskRun taskRunC = new TaskRun(3, 1, taskC, 1, created, null, null, TaskRunStatus.PENDING, null);
+    private static final TaskRun taskRunD = new TaskRun(4, 1, taskD, 1, created, null, null, TaskRunStatus.PENDING, null);
+    private static final TaskRun taskRunE = new TaskRun(5, 1, taskE, 1, created, null, null, TaskRunStatus.PENDING, null);
 
-    private static final TaskRun taskRunA2 = new TaskRun(6, 1, 1, 1, created, null, null, TaskRunStatus.PENDING, null);
-    private static final TaskRun taskRunA3 = new TaskRun(7, 1, 1, 1, created, null, null, TaskRunStatus.PENDING, null);
+    private static final TaskRun taskRunA2 = new TaskRun(6, 1, taskA, 1, created, null, null, TaskRunStatus.PENDING, null);
+    private static final TaskRun taskRunA3 = new TaskRun(7, 1, taskA, 1, created, null, null, TaskRunStatus.PENDING, null);
 
     private static final ImmutableList<TaskRun> taskRuns = ImmutableList.of(taskRunA, taskRunB, taskRunC, taskRunD, taskRunE);
 

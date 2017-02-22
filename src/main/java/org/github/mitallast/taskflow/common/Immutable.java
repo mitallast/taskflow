@@ -71,6 +71,14 @@ public final class Immutable {
         return builder.build();
     }
 
+    public static <V, T> ImmutableList<T> flatMap(Collection<V> list, Function<V, Iterable<T>> mapper) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        for (V v : list) {
+            builder.addAll(mapper.apply(v));
+        }
+        return builder.build();
+    }
+
     public static <T> ImmutableList<T> sort(Collection<T> values, Comparator<? super T> comparator) {
         ArrayList<T> arrayList = new ArrayList<>(values);
         arrayList.sort(comparator);

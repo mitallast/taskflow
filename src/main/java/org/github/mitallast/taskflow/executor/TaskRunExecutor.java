@@ -58,9 +58,9 @@ public class TaskRunExecutor extends AbstractComponent {
             }
             Dag dag = dagOpt.get();
 
-            Optional<Task> taskOpt = dag.tasks().stream().filter(task -> task.id() == taskRun.taskId()).findFirst();
+            Optional<Task> taskOpt = dag.tasks().stream().filter(task -> task.id() == taskRun.task().id()).findFirst();
             if (!taskOpt.isPresent()) {
-                logger.warn("task run {} task not found: {}", taskRun.id(), taskRun.taskId());
+                logger.warn("task run {} task not found: {}", taskRun.id(), taskRun.task().id());
                 dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, "", "task not found"));
                 return;
             }

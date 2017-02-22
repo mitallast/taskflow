@@ -7,7 +7,7 @@ import org.joda.time.DateTime;
 public class TaskRun implements Comparable<TaskRun> {
     private final long id;
     private final long dagId;
-    private final long taskId;
+    private final Task task;
     private final long dagRunId;
     private final DateTime createdDate;
     private final DateTime startDate;
@@ -15,10 +15,10 @@ public class TaskRun implements Comparable<TaskRun> {
     private final TaskRunStatus status;
     private final OperationResult operationResult;
 
-    public TaskRun(long id, long dagId, long taskId, long dagRunId, DateTime createdDate, DateTime startDate, DateTime finishDate, TaskRunStatus status, OperationResult operationResult) {
+    public TaskRun(long id, long dagId, Task task, long dagRunId, DateTime createdDate, DateTime startDate, DateTime finishDate, TaskRunStatus status, OperationResult operationResult) {
         this.id = id;
         this.dagId = dagId;
-        this.taskId = taskId;
+        this.task = task;
         this.dagRunId = dagRunId;
         this.createdDate = createdDate;
         this.startDate = startDate;
@@ -35,8 +35,8 @@ public class TaskRun implements Comparable<TaskRun> {
         return dagId;
     }
 
-    public long taskId() {
-        return taskId;
+    public Task task() {
+        return task;
     }
 
     public long dagRunId() {
@@ -73,28 +73,28 @@ public class TaskRun implements Comparable<TaskRun> {
         Preconditions.checkArgument(startDate == null);
         Preconditions.checkArgument(finishDate == null);
         Preconditions.checkArgument(operationResult == null);
-        return new TaskRun(id, dagId, taskId, dagRunId, createdDate, new DateTime(), null, TaskRunStatus.RUNNING, null);
+        return new TaskRun(id, dagId, task, dagRunId, createdDate, new DateTime(), null, TaskRunStatus.RUNNING, null);
     }
 
     public TaskRun success() {
         Preconditions.checkArgument(status == TaskRunStatus.RUNNING);
         Preconditions.checkNotNull(startDate);
         Preconditions.checkArgument(finishDate == null);
-        return new TaskRun(id, dagId, taskId, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.SUCCESS, operationResult);
+        return new TaskRun(id, dagId, task, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.SUCCESS, operationResult);
     }
 
     public TaskRun failure() {
         Preconditions.checkArgument(status == TaskRunStatus.RUNNING);
         Preconditions.checkNotNull(startDate);
         Preconditions.checkArgument(finishDate == null);
-        return new TaskRun(id, dagId, taskId, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.FAILED, operationResult);
+        return new TaskRun(id, dagId, task, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.FAILED, operationResult);
     }
 
     public TaskRun cancel() {
         Preconditions.checkArgument(status == TaskRunStatus.RUNNING);
         Preconditions.checkNotNull(startDate);
         Preconditions.checkArgument(finishDate == null);
-        return new TaskRun(id, dagId, taskId, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.CANCELED, operationResult);
+        return new TaskRun(id, dagId, task, dagRunId, createdDate, new DateTime(), new DateTime(), TaskRunStatus.CANCELED, operationResult);
     }
 
     @Override
@@ -106,18 +106,16 @@ public class TaskRun implements Comparable<TaskRun> {
 
         if (id != taskRun.id) return false;
         if (dagId != taskRun.dagId) return false;
-        if (taskId != taskRun.taskId) return false;
         if (dagRunId != taskRun.dagRunId) return false;
-        return createdDate.equals(taskRun.createdDate);
+        return task.equals(taskRun.task);
     }
 
     @Override
     public int hashCode() {
         int result = (int) (id ^ (id >>> 32));
         result = 31 * result + (int) (dagId ^ (dagId >>> 32));
-        result = 31 * result + (int) (taskId ^ (taskId >>> 32));
+        result = 31 * result + task.hashCode();
         result = 31 * result + (int) (dagRunId ^ (dagRunId >>> 32));
-        result = 31 * result + createdDate.hashCode();
         return result;
     }
 }

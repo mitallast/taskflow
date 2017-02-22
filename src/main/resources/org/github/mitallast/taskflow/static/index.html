@@ -67,7 +67,7 @@
     </table>
 </script>
 <script type="text/ng-template" id="/dag-state.html">
-    <h2 class="page-header">DAG {{dag.token}} #{{dag.version}}</h2>
+    <h2 class="page-header">DAG {{dag.token}}:{{dag.version}}</h2>
 
     <p>
         <a href="#dag/update/id/{{dag.id}}" class="btn btn-default">edit</a>
@@ -188,7 +188,7 @@
     </form>
 </script>
 <script type="text/ng-template" id="/dag-update.html">
-    <h2 class="page-header">Update DAG {{dag.token}} #{{dag.version}}</h2>
+    <h2 class="page-header">Update DAG {{dag.token}}:{{dag.version}}</h2>
 
     <pre>{{dag|json}}</pre>
 
@@ -264,7 +264,7 @@
         <tbody>
         <tr ng-repeat="run in runs">
             <td>{{run.id}}</td>
-            <td>{{run.dag.token}} #{{run.dag.version}}</td>
+            <td>{{run.dag.token}}:{{run.dag.version}}</td>
             <td>{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
@@ -296,7 +296,7 @@
         <tbody>
         <tr ng-repeat="run in runs">
             <td>{{run.id}}</td>
-            <td>{{run.dag.token}} #{{run.dag.version}}</td>
+            <td>{{run.dag.token}}:{{run.dag.version}}</td>
             <td>{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
@@ -318,7 +318,7 @@
 
     <p>id: {{dag_run.id}}</p>
 
-    <p>dag: {{dag_run.dag.token}} #{{run.dag.version}}</p>
+    <p>dag: {{dag_run.dag.token}}:{{dag_run.dag.version}}</p>
 
     <p>created: {{dag_run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</p>
 
@@ -336,6 +336,7 @@
             <th>id</th>
             <th>dagId</th>
             <th>dagRunId</th>
+            <th>task</th>
             <th>created</th>
             <th>start</th>
             <th>finish</th>
@@ -351,6 +352,7 @@
             <td>{{run.id}}</td>
             <td>{{run.dagId}}</td>
             <td>{{run.dagRunId}}</td>
+            <td>{{run.task.token}}:{{run.task.version}}</td>
             <td>{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.startDate | date:'yyyy-MM-dd HH:mm:ss sss'}}</td>
             <td>{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss sss'}}</td>
@@ -384,7 +386,7 @@
         <tbody>
         <tr ng-repeat="schedule in schedules">
             <td>
-                <a href="#dag/run/token/{{schedule.token}}" class="btn btn-sm btn-default">{{schedule.token}}</a>
+                <a href="#dag/token/{{schedule.token}}" class="btn btn-sm btn-default">{{schedule.token}}</a>
             </td>
             <td>
                 {{schedule.enabled}}
@@ -408,7 +410,7 @@
                 </div>
             </td>
             <td>
-                <a href="#dag/run/token/{{schedule.token}}" class="btn btn-sm btn-default">view</a>
+                <a href="#dag/token/{{schedule.token}}" class="btn btn-sm btn-default">view</a>
                 <button class="btn btn-sm btn-default" ng-show="!schedule.enabled" ng-click="enableSchedule(schedule)">
                     enable
                 </button>
