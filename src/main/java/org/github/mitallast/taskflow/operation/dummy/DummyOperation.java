@@ -32,17 +32,9 @@ public class DummyOperation extends AbstractComponent implements Operation {
         Config config = command.config().withFallback(reference());
 
         if (config.getString("status").equalsIgnoreCase("success")) {
-            return new OperationResult(
-                OperationStatus.SUCCESS,
-                "Success dummy operation",
-                ""
-            );
+            return new OperationResult(OperationStatus.SUCCESS, "Success dummy operation");
         } else {
-            return new OperationResult(
-                OperationStatus.FAILED,
-                "",
-                "Failed dummy operation"
-            );
+            return new OperationResult(OperationStatus.FAILED, "Failed dummy operation");
         }
     }
 }

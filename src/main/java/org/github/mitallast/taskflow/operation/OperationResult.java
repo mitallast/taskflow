@@ -4,36 +4,28 @@ import com.google.common.base.Preconditions;
 
 public class OperationResult {
     private final OperationStatus status;
-    private final String stdout;
-    private final String stderr;
+    private final String output;
 
-    public OperationResult(OperationStatus status, String stdout, String stderr) {
+    public OperationResult(OperationStatus status, String output) {
         Preconditions.checkNotNull(status);
-        Preconditions.checkNotNull(stdout);
-        Preconditions.checkNotNull(stderr);
+        Preconditions.checkNotNull(output);
         this.status = status;
-        this.stdout = stdout;
-        this.stderr = stderr;
+        this.output = output;
     }
 
     public OperationStatus status() {
         return status;
     }
 
-    public String stdout() {
-        return stdout;
-    }
-
-    public String stderr() {
-        return stderr;
+    public String output() {
+        return output;
     }
 
     @Override
     public String toString() {
         return "OperationResult{" +
             "status=" + status +
-            ", stdout='" + stdout + '\'' +
-            ", stderr='" + stderr + '\'' +
+            ", output='" + output + '\'' +
             '}';
     }
 }

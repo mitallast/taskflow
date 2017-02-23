@@ -102,3 +102,33 @@ body {
 .expression {
     border: 1px solid #ccc;
 }
+
+.console {
+    background: #212121;
+    color: #edede3;
+    font-family: 'Roboto Mono', Monaco, "Courier New", monospace;
+    font-weight: 100;
+    border: none;
+    margin: 10px 0 0 0;
+}
+
+.panel-title.inline {
+    display: inline-block;
+}
+
+button.console-caret {
+    -webkit-appearance: none;
+    padding: 0;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+}
+
+.console-caret{
+    float: right;
+    font-size: 21px;
+    font-weight: bold;
+    line-height: 1;
+    color: #777;
+    text-shadow: 0 1px 0 #fff;
+}

@@ -56,7 +56,7 @@ public class AwsS3Monitor extends AbstractComponent implements Operation {
 
             if (client.doesBucketExist(bucket)) {
                 if (client.doesObjectExist(bucket, prefix)) {
-                    return new OperationResult(OperationStatus.SUCCESS, "", "");
+                    return new OperationResult(OperationStatus.SUCCESS, "");
                 }
             }
             logger.info("sleep 1s");
@@ -65,9 +65,9 @@ public class AwsS3Monitor extends AbstractComponent implements Operation {
 
         if (Thread.interrupted()) {
             Thread.currentThread().interrupt();
-            return new OperationResult(OperationStatus.FAILED, "", "Operation canceled");
+            return new OperationResult(OperationStatus.FAILED, "Operation canceled");
         }
 
-        return new OperationResult(OperationStatus.FAILED, "", "Operation timed out");
+        return new OperationResult(OperationStatus.FAILED, "Operation timed out");
     }
 }

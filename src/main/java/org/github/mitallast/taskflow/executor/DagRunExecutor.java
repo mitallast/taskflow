@@ -148,8 +148,8 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
             schedule(dagRun.id());
 
         } else if (cmd instanceof CancelTaskRunCommand && taskRun.status() == TaskRunStatus.PENDING) {
-            logger.warn("cancel pending task run: {}", taskRun.id());
-            persistenceService.markDagRunCanceled(taskRun.id());
+            logger.warn("cancel pending task run {}", taskRun.id());
+            persistenceService.markTaskRunCanceled(taskRun.id());
             schedule(dagRun.id());
 
         } else if (cmd instanceof CancelTaskRunCommand && taskRun.status() == TaskRunStatus.RUNNING) {
@@ -164,7 +164,7 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
         for (TaskRun taskRun : dagRun.tasks()) {
             if (taskRun.status() == TaskRunStatus.RUNNING) {
                 logger.warn("detected as running task: {}", taskRun);
-                persistenceService.markTaskRunFailed(taskRun.id(), new OperationResult(OperationStatus.FAILED, "", "Detected as running task after start"));
+                persistenceService.markTaskRunFailed(taskRun.id(), new OperationResult(OperationStatus.FAILED, "Detected as running task after start"));
             }
         }
     }

@@ -2,17 +2,17 @@ package org.github.mitallast.taskflow.operation.shell;
 
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
-import org.github.mitallast.taskflow.common.IOUtils;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.operation.Operation;
 import org.github.mitallast.taskflow.operation.OperationCommand;
 import org.github.mitallast.taskflow.operation.OperationResult;
 import org.github.mitallast.taskflow.operation.OperationStatus;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class ShellOperation extends AbstractComponent implements Operation {
@@ -48,14 +48,18 @@ public class ShellOperation extends AbstractComponent implements Operation {
         cmd.add(config.getString("command"));
         cmd.addAll(config.getStringList("args"));
 
+        logger.info("cmd {}", cmd.stream().reduce((s, s2) -> s + " " + s2));
+
         long timeout = config.getDuration("timeout", TimeUnit.MILLISECONDS);
 
         ProcessBuilder builder = new ProcessBuilder(cmd);
+        builder.redirectErrorStream(true);
         builder.environment().putAll(command.environment().map());
         builder.directory(directory);
 
         try {
-            Process process = builder.start();
+            final Process process = builder.start();
+            final CompletableFuture<String> output = readStream(process.getInputStream());
 
             boolean exited = false;
             InterruptedException interruptedException = null;
@@ -77,21 +81,36 @@ public class ShellOperation extends AbstractComponent implements Operation {
             }
 
             int exitValue = process.exitValue();
-
-            String stdout = IOUtils.toString(process.getInputStream(), charset);
-            String stderr = IOUtils.toString(process.getErrorStream(), charset);
+            logger.info("exit code: {}", exitValue);
 
             return new OperationResult(
                 exitValue == 0 ? OperationStatus.SUCCESS : OperationStatus.FAILED,
-                stdout,
-                stderr
+                output.get()
             );
-        } catch (IOException e) {
+        } catch (IOException | ExecutionException e) {
+            logger.info("operation failed", e);
             return new OperationResult(
                 OperationStatus.FAILED,
-                "",
                 e.getMessage()
             );
         }
+    }
+
+    private CompletableFuture<String> readStream(InputStream inputStream) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                StringBuilder output = new StringBuilder();
+                new BufferedReader(new InputStreamReader(inputStream))
+                    .lines()
+                    .forEach(line -> {
+                        logger.info(line);
+                        output.append(line).append('\n');
+                    });
+                return output.toString();
+            } catch (Exception e) {
+                logger.warn("unexpected exception", e);
+                return "";
+            }
+        });
     }
 }

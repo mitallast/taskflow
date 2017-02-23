@@ -20,6 +20,11 @@ public class DagRunProcessor {
                 return new StartDagRunCommand(dagRun);
             case RUNNING:
                 logger.info("dag running: {}", dagRun.id());
+                if (dagRun.tasks().isEmpty()) {
+                    logger.warn("dag run does not contain tasks");
+                    return new FailedDagRunCommand(dagRun);
+                }
+
                 DagRunState dagRunState = new DagRunState(dag, dagRun);
 
                 if (dagRunState.hasFailedOutOfRetry()) {

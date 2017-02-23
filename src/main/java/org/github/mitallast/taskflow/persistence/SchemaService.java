@@ -82,7 +82,6 @@ public class SchemaService extends AbstractComponent {
 
             context.createTableIfNotExists(Schema.table.task_run)
                 .column(Schema.field.id)
-                .column(Schema.field.dag_id)
                 .column(Schema.field.task_id)
                 .column(Schema.field.dag_run_id)
                 .column(Schema.field.created_date)
@@ -90,11 +89,9 @@ public class SchemaService extends AbstractComponent {
                 .column(Schema.field.finish_date)
                 .column(Schema.field.status)
                 .column(Schema.field.operation_status)
-                .column(Schema.field.operation_stdout)
-                .column(Schema.field.operation_stderr)
+                .column(Schema.field.operation_output)
                 .constraint(constraint().primaryKey(Schema.field.id))
                 .constraint(constraint("task_run_fk_dag_run").foreignKey(Schema.field.dag_run_id).references(Schema.table.dag_run, Schema.field.id))
-                .constraint(constraint("task_run_fk_dag").foreignKey(Schema.field.dag_id).references(Schema.table.dag, Schema.field.id))
                 .constraint(constraint("task_run_fk_task").foreignKey(Schema.field.task_id).references(Schema.table.task, Schema.field.id))
                 .execute();
 

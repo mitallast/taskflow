@@ -61,31 +61,31 @@ public class DagRunProcessorTest extends BaseTest {
         }
 
         TaskRun taskRunA() {
-            return new TaskRun(1, 1, taskA(), created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(1, taskA(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunB() {
-            return new TaskRun(2, 1, taskB(), created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(2, taskB(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunC() {
-            return new TaskRun(3, 1, taskC(), created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(3, taskC(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunD() {
-            return new TaskRun(4, 1, taskD(), created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(4, taskD(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunE() {
-            return new TaskRun(5, 1, taskE(), created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(5, taskE(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunA2() {
-            return new TaskRun(6, 1, taskA(), created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(6, taskA(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunA3() {
-            return new TaskRun(7, 1, taskA(), created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(7, taskA(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         ImmutableList<TaskRun> taskRuns() {
@@ -1169,6 +1169,26 @@ public class DagRunProcessorTest extends BaseTest {
 
                 Command expected() {
                     return new CancelDagRunCommand(dagRun());
+                }
+            },
+            // test empty
+            new TestCase() {
+                @Override
+                ImmutableList<Task> tasks() {
+                    return ImmutableList.of();
+                }
+
+                @Override
+                ImmutableList<TaskRun> taskRuns() {
+                    return ImmutableList.of();
+                }
+
+                DagRun dagRun() {
+                    return super.dagRun().start();
+                }
+
+                Command expected() {
+                    return new FailedDagRunCommand(dagRun());
                 }
             }
         );

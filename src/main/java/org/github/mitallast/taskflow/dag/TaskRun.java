@@ -6,7 +6,6 @@ import org.joda.time.DateTime;
 
 public class TaskRun implements Comparable<TaskRun> {
     private final long id;
-    private final long dagId;
     private final Task task;
     private final DateTime createdDate;
     private final DateTime startDate;
@@ -14,9 +13,8 @@ public class TaskRun implements Comparable<TaskRun> {
     private final TaskRunStatus status;
     private final OperationResult operationResult;
 
-    public TaskRun(long id, long dagId, Task task, DateTime createdDate, DateTime startDate, DateTime finishDate, TaskRunStatus status, OperationResult operationResult) {
+    public TaskRun(long id, Task task, DateTime createdDate, DateTime startDate, DateTime finishDate, TaskRunStatus status, OperationResult operationResult) {
         this.id = id;
-        this.dagId = dagId;
         this.task = task;
         this.createdDate = createdDate;
         this.startDate = startDate;
@@ -27,10 +25,6 @@ public class TaskRun implements Comparable<TaskRun> {
 
     public long id() {
         return id;
-    }
-
-    public long dagId() {
-        return dagId;
     }
 
     public Task task() {
@@ -67,28 +61,28 @@ public class TaskRun implements Comparable<TaskRun> {
         Preconditions.checkArgument(startDate == null);
         Preconditions.checkArgument(finishDate == null);
         Preconditions.checkArgument(operationResult == null);
-        return new TaskRun(id, dagId, task, createdDate, new DateTime(), null, TaskRunStatus.RUNNING, null);
+        return new TaskRun(id, task, createdDate, new DateTime(), null, TaskRunStatus.RUNNING, null);
     }
 
     public TaskRun success() {
         Preconditions.checkArgument(status == TaskRunStatus.RUNNING);
         Preconditions.checkNotNull(startDate);
         Preconditions.checkArgument(finishDate == null);
-        return new TaskRun(id, dagId, task, createdDate, new DateTime(), new DateTime(), TaskRunStatus.SUCCESS, operationResult);
+        return new TaskRun(id, task, createdDate, new DateTime(), new DateTime(), TaskRunStatus.SUCCESS, operationResult);
     }
 
     public TaskRun failure() {
         Preconditions.checkArgument(status == TaskRunStatus.RUNNING);
         Preconditions.checkNotNull(startDate);
         Preconditions.checkArgument(finishDate == null);
-        return new TaskRun(id, dagId, task, createdDate, new DateTime(), new DateTime(), TaskRunStatus.FAILED, operationResult);
+        return new TaskRun(id, task, createdDate, new DateTime(), new DateTime(), TaskRunStatus.FAILED, operationResult);
     }
 
     public TaskRun cancel() {
         Preconditions.checkArgument(status == TaskRunStatus.RUNNING);
         Preconditions.checkNotNull(startDate);
         Preconditions.checkArgument(finishDate == null);
-        return new TaskRun(id, dagId, task, createdDate, new DateTime(), new DateTime(), TaskRunStatus.CANCELED, operationResult);
+        return new TaskRun(id, task, createdDate, new DateTime(), new DateTime(), TaskRunStatus.CANCELED, operationResult);
     }
 
     @Override
@@ -99,14 +93,12 @@ public class TaskRun implements Comparable<TaskRun> {
         TaskRun taskRun = (TaskRun) o;
 
         if (id != taskRun.id) return false;
-        if (dagId != taskRun.dagId) return false;
         return task.equals(taskRun.task);
     }
 
     @Override
     public int hashCode() {
         int result = (int) (id ^ (id >>> 32));
-        result = 31 * result + (int) (dagId ^ (dagId >>> 32));
         result = 31 * result + task.hashCode();
         return result;
     }

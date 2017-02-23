@@ -55,11 +55,12 @@ public class TaskRunExecutor extends AbstractComponent {
             Operation operation = operationService.operation(task.operation());
             if (operation == null) {
                 logger.warn("task run {} operation {} not found", taskRun.id(), task.operation());
-                dagService.markTaskRunFailed(dagRun, taskRun, new OperationResult(OperationStatus.FAILED, "", "operation not found"));
+                dagService.markTaskRunFailed(dagRun, taskRun, new OperationResult(OperationStatus.FAILED, "operation not found"));
                 return;
             }
 
             OperationResult operationResult = operation.run(task.command());
+            logger.info("status: {}", operationResult.status());
             switch (operationResult.status()) {
                 case SUCCESS:
                     logger.info("task run {} operation success: {}", taskRun.id(), operationResult);
@@ -69,13 +70,15 @@ public class TaskRunExecutor extends AbstractComponent {
                     logger.error("task run {} operation failed: {}", taskRun.id(), operationResult);
                     dagService.markTaskRunFailed(dagRun, taskRun, operationResult);
                     break;
+                default:
+                    logger.warn("unexpected: {}", operationResult);
             }
         } catch (InterruptedException e) {
             logger.warn("task run {} canceled", taskRun.id(), e);
             dagService.markTaskRunCanceled(dagRun, taskRun);
         } catch (Exception e) {
             logger.warn("task run {} failed", taskRun.id(), e);
-            dagService.markTaskRunFailed(dagRun, taskRun, new OperationResult(OperationStatus.FAILED, "", e.toString()));
+            dagService.markTaskRunFailed(dagRun, taskRun, new OperationResult(OperationStatus.FAILED, e.toString()));
         } finally {
             // cleanup to prevent memory leak
             futures.remove(taskRun);

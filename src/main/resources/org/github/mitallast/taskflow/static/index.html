@@ -6,6 +6,7 @@
     <base href="/">
 
     <title>Taskflow</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto+Mono:100,300,400,500&amp;subset=cyrillic" rel="stylesheet">
     <link href="/resources/webjars/bootstrap/3.3.7-1/css/bootstrap.css" rel="stylesheet">
     <link href="/static/dashboard.css" rel="stylesheet">
 </head>
@@ -16,8 +17,10 @@
     <div class="container-fluid">
         <div class="navbar-header">
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span>
-                <span class="icon-bar"></span> <span class="icon-bar"></span>
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
             </button>
             <a class="navbar-brand" href="#">Taskflow</a>
         </div>
@@ -42,7 +45,7 @@
     <table class="table table-stripped">
         <thead>
         <tr>
-            <th>id</th>
+            <th>#</th>
             <th>version</th>
             <th>token</th>
             <th>tasks</th>
@@ -67,7 +70,7 @@
     </table>
 </script>
 <script type="text/ng-template" id="/dag-state.html">
-    <h2 class="page-header">DAG {{dag.token}}:{{dag.version}}</h2>
+    <h2 class="page-header">DAG {{dag.token}}:{{dag.version}} #{{dag.id}}</h2>
 
     <p>
         <a href="#dag/update/id/{{dag.id}}" class="btn btn-default">edit</a>
@@ -310,15 +313,11 @@
     </table>
 </script>
 <script type="text/ng-template" id="/dag-run-state.html">
-    <h2 class="page-header">DAG run state</h2>
+    <h2 class="page-header">DAG {{dag_run.dag.token}}:{{dag_run.dag.version}} run:{{dag_run.id}}</h2>
 
     <p ng-show="cancelable">
         <button ng-click="cancelDagRun()" type="button" class="btn btn-danger">Cancel</button>
     </p>
-
-    <p>id: {{dag_run.id}}</p>
-
-    <p>dag: {{dag_run.dag.token}}:{{dag_run.dag.version}}</p>
 
     <p>created: {{dag_run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</p>
 
@@ -330,43 +329,25 @@
 
     <p>tasks:{{dag_run.tasks.length}}</p>
 
-    <table class="table table-stripped">
-        <thead>
-        <tr>
-            <th>id</th>
-            <th>dagId</th>
-            <th>task</th>
-            <th>created</th>
-            <th>start</th>
-            <th>finish</th>
-            <th>status</th>
-            <th>op status</th>
-            <th>op stdout</th>
-            <th>op stderr</th>
-            <th></th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr ng-repeat="run in dag_run.tasks">
-            <td>{{run.id}}</td>
-            <td>{{run.dagId}}</td>
-            <td>{{run.task.token}}:{{run.task.version}}</td>
-            <td>{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
-            <td>{{run.startDate | date:'yyyy-MM-dd HH:mm:ss sss'}}</td>
-            <td>{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss sss'}}</td>
-            <td>{{run.status}}</td>
-            <td>{{run.operationResult.status}}</td>
-            <td>
-                <pre ng-show="run.operationResult.stdout">{{run.operationResult.stdout}}</pre>
-            </td>
-            <td>
-                <pre ng-show="run.operationResult.stderr">{{run.operationResult.stderr}}</pre>
-            </td>
-        </tr>
-        </tbody>
-    </table>
-
     <div class="gantt" diagram-gantt="dag_run"></div>
+
+    <div class="panel panel-default" ng-repeat="run in dag_run.tasks">
+        <div class="panel-body">
+            <div>
+                <button type="button" class="console-caret" aria-label="Caret" ng-show="run.operationResult.output" ng-click="toggleOutput(run)">
+                    <span class="caret"></span>
+                </button>
+                <span class="panel-title inline">#{{run.id}} {{run.task.token}}:{{run.task.version}}</span>
+                <span class="label label-info">run:{{run.status}}</span>
+                <span class="label label-info" ng-show="run.operationResult.status">op:{{run.operationResult.status}}</span>
+
+                <span class="label label-default">created:{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                <span class="label label-default" ng-show="run.startDate">start:{{run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                <span class="label label-default" ng-show="run.finishDate">finish:{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+            </div>
+            <pre class="console" ng-show="run._show">{{run.operationResult.output}}</pre>
+        </div>
+    </div>
 </script>
 
 <script type="text/ng-template" id="/dag-schedule.html">
@@ -391,7 +372,8 @@
             </td>
             <td>
                 <div>
-                    <div ng-show="!schedule.edit" ng-click="edit(schedule)" class="input-sm expression">{{schedule.cronExpression}}&nbsp;</div>
+                    <div ng-show="!schedule.edit" ng-click="edit(schedule)" class="input-sm expression">
+                        {{schedule.cronExpression}}&nbsp;</div>
                     <form class="form-horizontal" ng-show="schedule.edit" ng-submit="update(schedule)">
                         <div class="form-group" ng-class="{'has-error':schedule.errors.cronExpression}">
                             <div class="input-group">

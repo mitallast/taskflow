@@ -56,8 +56,7 @@ interface Schema {
         Field<String> operation_config = field("operation_config", SQLDataType.CLOB.nullable(false));
         Field<String> operation_environment = field("operation_environment", SQLDataType.CLOB.nullable(false));
 
-        Field<String> operation_stdout = field("operation_stdout", SQLDataType.CLOB);
-        Field<String> operation_stderr = field("operation_stderr", SQLDataType.CLOB);
+        Field<String> operation_output = field("operation_output", SQLDataType.CLOB);
     }
 
 }

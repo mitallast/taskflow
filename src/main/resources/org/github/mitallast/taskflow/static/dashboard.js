@@ -240,6 +240,13 @@
                 $scope.load();
             });
         };
+        $scope.toggleOutput = function(run) {
+            if(run._show){
+                run._show = false;
+            }else{
+                run._show = true;
+            }
+        };
         $scope.load = function() {
             $http.get('/api/dag/run/id/' + $routeParams.id)
             .then(function(response){
@@ -248,7 +255,7 @@
                 if($scope.cancelable) {
                     $timeout(function(){
                       $scope.load();
-                    },100)
+                    },1000)
                 }
             });
         };
@@ -445,7 +452,7 @@
 
                         rectangles.append("text")
                             .text(function(d){
-                                return d.id;
+                                return "#" + d.id + " " + d.task.token + ":" + d.task.version;
                             })
                             .attr("x", function(d){
                                 return (timeScale(parseFinishDate(d.finishDate))-timeScale(new Date(d.startDate)))/2 + timeScale(new Date(d.startDate));

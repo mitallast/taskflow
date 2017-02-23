@@ -89,7 +89,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                         .insertInto(
                             table.task_run,
                             field.id,
-                            field.dag_id,
                             field.task_id,
                             field.dag_run_id,
                             field.created_date,
@@ -97,7 +96,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                         )
                         .values(
                             sequence.task_run_seq.nextval(),
-                            val(dag.id()),
                             val(task.id()),
                             val(dagRunId),
                             val(created),
@@ -110,7 +108,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
 
                     tasks.add(new TaskRun(
                         taskRunId,
-                        dag.id(),
                         task,
                         createdDate,
                         null,
@@ -276,7 +273,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                     .insertInto(
                         table.task_run,
                         field.id,
-                        field.dag_id,
                         field.task_id,
                         field.dag_run_id,
                         field.created_date,
@@ -284,7 +280,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                     )
                     .values(
                         sequence.task_run_seq.nextval(),
-                        val(taskRun.dagId()),
                         val(taskRun.task().id()),
                         val(dagRun.id()),
                         val(created),
@@ -297,7 +292,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
 
                 return new TaskRun(
                     taskRunId,
-                    taskRun.dagId(),
                     taskRun.task(),
                     createdDate,
                     null,
@@ -336,8 +330,7 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                     .set(field.status, TaskRunStatus.SUCCESS.name())
                     .set(field.finish_date, new Timestamp(System.currentTimeMillis()))
                     .set(field.operation_status, operationResult.status().name())
-                    .set(field.operation_stdout, operationResult.stdout())
-                    .set(field.operation_stderr, operationResult.stderr())
+                    .set(field.operation_output, operationResult.output())
                     .where(field.id.eq(id).and(field.status.eq(TaskRunStatus.RUNNING.name())))
                     .execute();
 
@@ -357,8 +350,7 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                     .set(field.status, TaskRunStatus.FAILED.name())
                     .set(field.finish_date, now())
                     .set(field.operation_status, operationResult.status().name())
-                    .set(field.operation_stdout, operationResult.stdout())
-                    .set(field.operation_stderr, operationResult.stderr())
+                    .set(field.operation_output, operationResult.output())
                     .where(field.id.eq(id).and(field.status.eq(TaskRunStatus.RUNNING.name())))
                     .execute();
 
@@ -388,7 +380,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
     private TaskRun taskRun(Record record, Task task) {
         return new TaskRun(
             record.get(field.id),
-            record.get(field.dag_id),
             task,
             date(record.get(field.created_date)),
             date(record.get(field.start_date)),
@@ -417,8 +408,7 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
         } else {
             return new OperationResult(
                 OperationStatus.valueOf(status),
-                record.get(field.operation_stdout),
-                record.get(field.operation_stderr)
+                record.get(field.operation_output)
             );
         }
     }
