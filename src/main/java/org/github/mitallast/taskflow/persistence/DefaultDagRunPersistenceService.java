@@ -112,7 +112,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                         taskRunId,
                         dag.id(),
                         task,
-                        dagRunId,
                         createdDate,
                         null,
                         null,
@@ -265,10 +264,10 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
     // task run api
 
     @Override
-    public TaskRun retry(TaskRun taskRun) {
+    public TaskRun retry(DagRun dagRun, TaskRun taskRun) {
         try (DSLContext tr = persistence.context()) {
             return tr.transactionResult(conf -> {
-                logger.info("retry task run", taskRun.dagRunId(), taskRun.task().id());
+                logger.info("retry task run {} task {}", taskRun.id(), taskRun.task().token());
 
                 DateTime createdDate = DateTime.now();
                 Timestamp created = new Timestamp(createdDate.getMillis());
@@ -287,7 +286,7 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                         sequence.task_run_seq.nextval(),
                         val(taskRun.dagId()),
                         val(taskRun.task().id()),
-                        val(taskRun.dagRunId()),
+                        val(dagRun.id()),
                         val(created),
                         val(TaskRunStatus.PENDING.name())
                     )
@@ -300,7 +299,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
                     taskRunId,
                     taskRun.dagId(),
                     taskRun.task(),
-                    taskRun.dagRunId(),
                     createdDate,
                     null,
                     null,
@@ -392,7 +390,6 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
             record.get(field.id),
             record.get(field.dag_id),
             task,
-            record.get(field.dag_run_id),
             date(record.get(field.created_date)),
             date(record.get(field.start_date)),
             date(record.get(field.finish_date)),

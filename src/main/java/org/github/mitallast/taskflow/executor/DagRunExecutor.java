@@ -56,11 +56,11 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
         if (dagRun.status() == DagRunStatus.PENDING || dagRun.status() == DagRunStatus.RUNNING) {
             for (TaskRun taskRun : dagRun.tasks()) {
                 if (taskRun.status() == TaskRunStatus.PENDING) {
-                    handle(new CancelTaskRunCommand(taskRun));
+                    handle(dagRun, new CancelTaskRunCommand(taskRun));
                     return;
                 }
                 if (taskRun.status() == TaskRunStatus.RUNNING) {
-                    handle(new CancelTaskRunCommand(taskRun));
+                    handle(dagRun, new CancelTaskRunCommand(taskRun));
                     return;
                 }
             }
@@ -95,7 +95,7 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
         if (cmd instanceof DagRunCommand) {
             handle((DagRunCommand) cmd);
         } else if (cmd instanceof TaskRunCommand) {
-            handle((TaskRunCommand) cmd);
+            handle(dagRun, (TaskRunCommand) cmd);
         } else {
             logger.warn("unexpected command: {}", cmd);
         }
@@ -134,23 +134,23 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
         }
     }
 
-    private void handle(TaskRunCommand cmd) {
+    private void handle(DagRun dagRun, TaskRunCommand cmd) {
         final TaskRun taskRun = cmd.taskRun();
         if (cmd instanceof ExecuteTaskRunCommand) {
             logger.warn("execute task run: {}", taskRun.id());
             persistenceService.startTaskRun(taskRun.id());
-            taskRunExecutor.schedule(taskRun);
-            schedule(taskRun.dagRunId());
+            taskRunExecutor.schedule(dagRun, taskRun);
+            schedule(dagRun.id());
 
         } else if (cmd instanceof RetryTaskRunCommand) {
             logger.warn("retry task run: {}", taskRun.id());
-            persistenceService.retry(taskRun);
-            schedule(taskRun.dagRunId());
+            persistenceService.retry(dagRun, taskRun);
+            schedule(dagRun.id());
 
         } else if (cmd instanceof CancelTaskRunCommand && taskRun.status() == TaskRunStatus.PENDING) {
             logger.warn("cancel pending task run: {}", taskRun.id());
             persistenceService.markDagRunCanceled(taskRun.id());
-            schedule(taskRun.dagRunId());
+            schedule(dagRun.id());
 
         } else if (cmd instanceof CancelTaskRunCommand && taskRun.status() == TaskRunStatus.RUNNING) {
             logger.warn("cancel running task run: {}", taskRun.id());

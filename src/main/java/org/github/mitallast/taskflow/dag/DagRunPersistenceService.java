@@ -25,7 +25,7 @@ public interface DagRunPersistenceService {
 
     boolean markDagRunCanceled(long id);
 
-    TaskRun retry(TaskRun taskRun);
+    TaskRun retry(DagRun dagRun, TaskRun taskRun);
 
     boolean startTaskRun(long id);
 

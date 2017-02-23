@@ -3,6 +3,7 @@ package org.github.mitallast.taskflow.executor;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
+import org.github.mitallast.taskflow.dag.DagRun;
 import org.github.mitallast.taskflow.dag.DagService;
 import org.github.mitallast.taskflow.dag.Task;
 import org.github.mitallast.taskflow.dag.TaskRun;
@@ -43,18 +44,18 @@ public class TaskRunExecutor extends AbstractComponent {
         }
     }
 
-    public void schedule(TaskRun taskRun) {
-        futures.computeIfAbsent(taskRun, t -> executorService.submit(() -> execute(taskRun)));
+    public void schedule(DagRun dagRun, TaskRun taskRun) {
+        futures.computeIfAbsent(taskRun, t -> executorService.submit(() -> execute(dagRun, taskRun)));
     }
 
-    private void execute(TaskRun taskRun) {
+    private void execute(DagRun dagRun, TaskRun taskRun) {
         try {
             Task task = taskRun.task();
 
             Operation operation = operationService.operation(task.operation());
             if (operation == null) {
                 logger.warn("task run {} operation {} not found", taskRun.id(), task.operation());
-                dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, "", "operation not found"));
+                dagService.markTaskRunFailed(dagRun, taskRun, new OperationResult(OperationStatus.FAILED, "", "operation not found"));
                 return;
             }
 
@@ -62,19 +63,19 @@ public class TaskRunExecutor extends AbstractComponent {
             switch (operationResult.status()) {
                 case SUCCESS:
                     logger.info("task run {} operation success: {}", taskRun.id(), operationResult);
-                    dagService.markTaskRunSuccess(taskRun, operationResult);
+                    dagService.markTaskRunSuccess(dagRun, taskRun, operationResult);
                     break;
                 case FAILED:
                     logger.error("task run {} operation failed: {}", taskRun.id(), operationResult);
-                    dagService.markTaskRunFailed(taskRun, operationResult);
+                    dagService.markTaskRunFailed(dagRun, taskRun, operationResult);
                     break;
             }
         } catch (InterruptedException e) {
             logger.warn("task run {} canceled", taskRun.id(), e);
-            dagService.markTaskRunCanceled(taskRun);
+            dagService.markTaskRunCanceled(dagRun, taskRun);
         } catch (Exception e) {
             logger.warn("task run {} failed", taskRun.id(), e);
-            dagService.markTaskRunFailed(taskRun, new OperationResult(OperationStatus.FAILED, "", e.toString()));
+            dagService.markTaskRunFailed(dagRun, taskRun, new OperationResult(OperationStatus.FAILED, "", e.toString()));
         } finally {
             // cleanup to prevent memory leak
             futures.remove(taskRun);

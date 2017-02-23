@@ -335,7 +335,6 @@
         <tr>
             <th>id</th>
             <th>dagId</th>
-            <th>dagRunId</th>
             <th>task</th>
             <th>created</th>
             <th>start</th>
@@ -351,7 +350,6 @@
         <tr ng-repeat="run in dag_run.tasks">
             <td>{{run.id}}</td>
             <td>{{run.dagId}}</td>
-            <td>{{run.dagRunId}}</td>
             <td>{{run.task.token}}:{{run.task.version}}</td>
             <td>{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</td>
             <td>{{run.startDate | date:'yyyy-MM-dd HH:mm:ss sss'}}</td>

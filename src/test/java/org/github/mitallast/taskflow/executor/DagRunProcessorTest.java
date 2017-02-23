@@ -61,31 +61,31 @@ public class DagRunProcessorTest extends BaseTest {
         }
 
         TaskRun taskRunA() {
-            return new TaskRun(1, 1, taskA(), 1, created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(1, 1, taskA(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunB() {
-            return new TaskRun(2, 1, taskB(), 1, created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(2, 1, taskB(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunC() {
-            return new TaskRun(3, 1, taskC(), 1, created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(3, 1, taskC(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunD() {
-            return new TaskRun(4, 1, taskD(), 1, created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(4, 1, taskD(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunE() {
-            return new TaskRun(5, 1, taskE(), 1, created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(5, 1, taskE(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunA2() {
-            return new TaskRun(6, 1, taskA(), 1, created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(6, 1, taskA(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         TaskRun taskRunA3() {
-            return new TaskRun(7, 1, taskA(), 1, created, null, null, TaskRunStatus.PENDING, null);
+            return new TaskRun(7, 1, taskA(), created, null, null, TaskRunStatus.PENDING, null);
         }
 
         ImmutableList<TaskRun> taskRuns() {
