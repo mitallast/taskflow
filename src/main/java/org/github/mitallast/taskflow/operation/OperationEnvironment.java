@@ -1,9 +1,13 @@
 package org.github.mitallast.taskflow.operation;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.github.mitallast.taskflow.common.Immutable;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Operation environment
@@ -31,6 +35,10 @@ public class OperationEnvironment {
 
     public ImmutableMap<String, String> map() {
         return env;
+    }
+
+    public ImmutableList<String> list() {
+        return Immutable.map(env.entrySet(), entry -> entry.getKey() + "=" + entry.getValue());
     }
 
     @Override

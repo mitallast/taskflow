@@ -6,11 +6,7 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigValue;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
-
-import java.util.Map;
-import java.util.Properties;
 
 import static com.github.dockerjava.core.DefaultDockerClientConfig.*;
 

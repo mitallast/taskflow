@@ -2,6 +2,7 @@ package org.github.mitallast.taskflow.docker.operation.container;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
@@ -12,15 +13,14 @@ import org.github.mitallast.taskflow.operation.OperationResult;
 import org.github.mitallast.taskflow.operation.OperationStatus;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
-public class DockerCreateContainer extends AbstractComponent implements Operation {
+public class DockerContainerCreate extends AbstractComponent implements Operation {
     private final DockerService dockerService;
 
     @Inject
-    public DockerCreateContainer(Config config, DockerService dockerService) {
-        super(config.getConfig("operation.docker.container.create"), DockerCreateContainer.class);
+    public DockerContainerCreate(Config config, DockerService dockerService) {
+        super(config.getConfig("operation.docker.container.create"), DockerContainerCreate.class);
         this.dockerService = dockerService;
     }
 
@@ -47,13 +47,19 @@ public class DockerCreateContainer extends AbstractComponent implements Operatio
         String image = config.getString("image");
         String name = config.getString("name");
 
-        List<String> env = command.environment().map().entrySet().stream()
-            .map(entry -> entry.getKey() + "=" + entry.getValue())
-            .collect(Collectors.toList());
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+        config.getConfig("labels")
+            .entrySet()
+            .forEach(entry -> builder.put(entry.getKey(), entry.getValue().unwrapped().toString()));
+        Map<String, String> labels = builder.build();
+
+        logger.info("create container from image {}", image);
+        logger.info("container labels {}", labels);
 
         CreateContainerResponse exec = docker.createContainerCmd(image)
             .withName(name)
-            .withEnv(env)
+            .withLabels(labels)
+            .withEnv(command.environment().list())
             .exec();
 
         return new OperationResult(
