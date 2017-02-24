@@ -193,6 +193,8 @@ public class JsonService extends AbstractComponent {
             gen.writeStringField("id", value.id());
             gen.writeFieldName("reference");
             gen.writeObject(value.reference());
+            gen.writeFieldName("schema");
+            gen.writeObject(value.schema());
             gen.writeEndObject();
         }
     }

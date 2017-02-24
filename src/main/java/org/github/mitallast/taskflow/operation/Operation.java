@@ -15,5 +15,7 @@ public interface Operation {
 
     Config reference();
 
+    Config schema();
+
     OperationResult run(OperationCommand command) throws IOException, InterruptedException;
 }

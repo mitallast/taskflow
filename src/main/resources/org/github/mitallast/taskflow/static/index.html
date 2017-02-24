@@ -129,9 +129,6 @@
 <script type="text/ng-template" id="/dag-create.html">
     <h2 class="page-header">Create DAG</h2>
 
-    <pre>{{dag}}</pre>
-    <pre>{{errors}}</pre>
-
     <form name="dagForm" novalidate ng-submit="dagForm.$valid && createDag()">
         <div class="form-group" ng-class="{'has-error':errors.token}">
             <label class="control-label">Token</label>
@@ -144,45 +141,7 @@
             <span class="help-block" ng-show="errors.tasks_list">{{errors.tasks_list}}</span>
         </div>
 
-        <div class="panel panel-default" ng-repeat="task in dag.tasks" ng-form="taskForm">
-            <div class="panel-body">
-                <label class="control-label">task: {{task.token}}</label>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].token}">
-                    <label class="control-label">Token</label>
-                    <input ng-model="task.token" name="token" required class="form-control" placeholder="token">
-                    <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].token}}</span>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].depends}">
-                    <label class="control-label">Depends</label>
-                    <textarea json-text depends ng-model="task.depends" name="depends" required class="form-control"></textarea>
-                    <span class="help-block" ng-show="errors.tasks[$index].depends">{{errors.tasks[$index].depends}}</span>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].retry}">
-                    <label class="control-label">Retry</label>
-                    <input ng-model="task.retry" name="retry" required class="form-control" placeholder="0">
-                    <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].retry}}</span>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].operation}">
-                    <label class="control-label">Operation</label>
-                    <select ng-model="task.operation" name="operation" required class="form-control" ng-options="item for item in operations"></select>
-                    <span class="help-block" ng-show="errors.tasks[$index].operation">{{errors.tasks[$index].operation}}</span>
-                </div>
-                <div class="form-group" ng-show="operationsMap[task.operation]">
-                    <label>Config reference</label>
-                    <pre>{{operationsMap[task.operation].reference|json}}</pre>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].command.config}">
-                    <label class="control-label">Operation Config</label>
-                    <textarea json-text ng-model="task.command.config" class="form-control"></textarea>
-                    <span class="help-block" ng-show="errors.tasks[$index].command.config">{{errors.tasks[$index].command.config}}</span>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].command.environment}">
-                    <label class="control-label">Operation Environment</label>
-                    <textarea json-text ng-model="task.command.environment" class="form-control"></textarea>
-                    <span class="help-block" ng-show="errors.tasks[$index].command.environment">{{errors.tasks[$index].command.environment}}</span>
-                </div>
-            </div>
-        </div>
+        <ng-include src="'/dag-tasks-form.html'"></ng-include>
 
         <button ng-click="addTask()" type="button" class="btn btn-default">Add task</button>
         <button ng-click="validateDag()" type="button" class="btn btn-default">Validate</button>
@@ -193,59 +152,67 @@
 <script type="text/ng-template" id="/dag-update.html">
     <h2 class="page-header">Update DAG {{dag.token}}:{{dag.version}}</h2>
 
-    <pre>{{dag|json}}</pre>
-
     <form name="create-dag" ng-submit="updateDag()">
         <div class="form-group" ng-class="{'has-error':errors.tasks_list}">
             <h4>Tasks</h4>
             <span class="help-block" ng-show="errors.tasks_list">{{errors.tasks_list}}</span>
         </div>
 
-        <div class="panel panel-default" ng-repeat="task in dag.tasks" ng-form="taskForm">
-            <div class="panel-body">
-                <label class="control-label">task: {{task.token}}</label>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].token}">
-                    <label class="control-label">Token</label>
-                    <input ng-model="task.token" name="token" required class="form-control" placeholder="token">
-                    <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].token}}</span>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].depends}">
-                    <label class="control-label">Depends</label>
-                    <textarea json-text depends ng-model="task.depends" name="depends" required class="form-control"></textarea>
-                    <span class="help-block" ng-show="errors.tasks[$index].depends">{{errors.tasks[$index].depends}}</span>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].retry}">
-                    <label class="control-label">Retry</label>
-                    <input ng-model="task.retry" name="retry" required class="form-control" placeholder="0">
-                    <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].retry}}</span>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].operation}">
-                    <label class="control-label">Operation</label>
-                    <select ng-model="task.operation" name="operation" required class="form-control" ng-options="item for item in operations"></select>
-                    <span class="help-block" ng-show="errors.tasks[$index].operation">{{errors.tasks[$index].operation}}</span>
-                </div>
-                <div class="form-group" ng-show="operationsMap[task.operation]">
-                    <label>Config reference</label>
-                    <pre>{{operationsMap[task.operation].reference|json}}</pre>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].command.config}">
-                    <label class="control-label">Operation Config</label>
-                    <textarea json-text ng-model="task.command.config" class="form-control"></textarea>
-                    <span class="help-block" ng-show="errors.tasks[$index].command.config">{{errors.tasks[$index].command.config}}</span>
-                </div>
-                <div class="form-group" ng-class="{'has-error':errors.tasks[$index].command.environment}">
-                    <label class="control-label">Operation Environment</label>
-                    <textarea json-text ng-model="task.command.environment" class="form-control"></textarea>
-                    <span class="help-block" ng-show="errors.tasks[$index].command.environment">{{errors.tasks[$index].command.environment}}</span>
-                </div>
-            </div>
-        </div>
+        <ng-include src="'/dag-tasks-form.html'"></ng-include>
 
         <button ng-click="addTask()" type="button" class="btn btn-default">Add task</button>
         <button ng-click="validateDag()" type="button" class="btn btn-default">Validate</button>
 
         <button type="submit" class="btn btn-primary">Submit</button>
     </form>
+</script>
+<script type="text/ng-template" id="/dag-tasks-form.html">
+    <div class="panel panel-default" ng-repeat="task in dag.tasks" ng-form="taskForm">
+        <div class="panel-body">
+            <label class="control-label">task: {{task.token}}</label>
+            <div class="form-group" ng-class="{'has-error':errors.tasks[$index].token}">
+                <label class="control-label">Token</label>
+                <input ng-model="task.token" name="token" required class="form-control" placeholder="token">
+                <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].token}}</span>
+            </div>
+            <div class="form-group" ng-class="{'has-error':errors.tasks[$index].depends}">
+                <label class="control-label">Depends</label>
+                <textarea json-text depends ng-model="task.depends" name="depends" required class="form-control"></textarea>
+                <span class="help-block" ng-show="errors.tasks[$index].depends">{{errors.tasks[$index].depends}}</span>
+            </div>
+            <div class="form-group" ng-class="{'has-error':errors.tasks[$index].retry}">
+                <label class="control-label">Retry</label>
+                <input ng-model="task.retry" name="retry" required class="form-control" placeholder="0">
+                <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].retry}}</span>
+            </div>
+            <div class="form-group" ng-class="{'has-error':errors.tasks[$index].operation}">
+                <label class="control-label">Operation</label>
+                <select ng-model="task.operation" name="operation" required class="form-control" ng-options="item for item in operations"></select>
+                <span class="help-block" ng-show="errors.tasks[$index].operation">{{errors.tasks[$index].operation}}</span>
+            </div>
+
+            <div ng-repeat="(field, schema) in operationsMap[task.operation].schema" ng-switch on="schema.type">
+                <div class="form-group" ng-switch-when="select">
+                    <label class="control-label">{{field}}</label>
+                    <select ng-model="task.command.config[field]" class="form-control" ng-options="item for item in schema.options"></select>
+                </div>
+                <div class="form-group" ng-switch-when="text">
+                    <label class="control-label">{{field}}</label>
+                    <input ng-model="task.command.config[field]" class="form-control">
+                </div>
+                <div class="form-group" ng-switch-when="json">
+                    <label class="control-label">{{field}}</label>
+                    <textarea json-text ng-model="task.command.config[field]" class="form-control"></textarea>
+                </div>
+            </div>
+
+            <div class="form-group" ng-class="{'has-error':errors.tasks[$index].command.environment}">
+                <label class="control-label">Operation Environment</label>
+                <textarea json-text ng-model="task.command.environment" class="form-control"></textarea>
+                <span class="help-block" ng-show="errors.tasks[$index].command.environment">{{errors.tasks[$index].command.environment}}</span>
+            </div>
+        </div>
+    </div>
 </script>
 
 <script type="text/ng-template" id="/dag-run.html">
@@ -401,9 +368,6 @@
         </tr>
         </tbody>
     </table>
-</script>
-<script>
-
 </script>
 
 <script type="text/ng-template" id="/operations.html">

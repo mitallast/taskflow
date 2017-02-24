@@ -29,7 +29,12 @@ public class ShellOperation extends AbstractComponent implements Operation {
 
     @Override
     public Config reference() {
-        return config;
+        return config.getConfig("reference");
+    }
+
+    @Override
+    public Config schema() {
+        return config.getConfig("schema");
     }
 
     @Override
