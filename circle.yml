@@ -6,7 +6,7 @@ dependencies:
     - mvn clean package
   override:
     - docker info
-    - docker build -t mitallast/taskflow:$(git describe $(git rev-list --tags --max-count=1)) .
+    - docker build -t mitallast/taskflow .
 deployment:
   hub:
     branch: master
