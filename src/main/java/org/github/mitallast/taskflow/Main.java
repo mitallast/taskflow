@@ -9,6 +9,7 @@ import org.github.mitallast.taskflow.common.component.LifecycleService;
 import org.github.mitallast.taskflow.common.component.ModulesBuilder;
 import org.github.mitallast.taskflow.common.json.JsonModule;
 import org.github.mitallast.taskflow.dag.*;
+import org.github.mitallast.taskflow.docker.DockerModule;
 import org.github.mitallast.taskflow.operation.*;
 import org.github.mitallast.taskflow.persistence.PersistenceModule;
 import org.github.mitallast.taskflow.rest.RestModule;
@@ -33,6 +34,7 @@ public class Main {
         modules.add(new SchedulerModule());
         modules.add(new RestModule());
         modules.add(new AwsModule());
+        modules.add(new DockerModule());
 
         Injector injector = modules.createInjector();
         LifecycleService lifecycleService = injector.getInstance(LifecycleService.class);
