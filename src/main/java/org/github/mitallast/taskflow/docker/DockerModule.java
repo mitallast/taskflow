@@ -13,6 +13,8 @@ public class DockerModule extends AbstractModule {
         Multibinder<Operation> binder = Multibinder.newSetBinder(binder(), Operation.class);
         binder.addBinding().to(DockerContainerCreate.class).asEagerSingleton();
         binder.addBinding().to(DockerContainerStart.class).asEagerSingleton();
+        binder.addBinding().to(DockerContainerWait.class).asEagerSingleton();
+        binder.addBinding().to(DockerContainerLog.class).asEagerSingleton();
         binder.addBinding().to(DockerContainerStop.class).asEagerSingleton();
         binder.addBinding().to(DockerContainerKill.class).asEagerSingleton();
         binder.addBinding().to(DockerContainerRemove.class).asEagerSingleton();
