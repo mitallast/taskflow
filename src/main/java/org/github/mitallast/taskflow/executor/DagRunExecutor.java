@@ -15,6 +15,7 @@ import java.util.concurrent.Executors;
 
 public class DagRunExecutor extends AbstractLifecycleComponent {
 
+    private final DagService dagService;
     private final DagRunPersistenceService persistenceService;
     private final DagRunProcessor dagRunScheduler;
     private final TaskRunExecutor taskRunExecutor;
@@ -24,11 +25,13 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
     @Inject
     public DagRunExecutor(
         Config config,
+        DagService dagService,
         DagRunPersistenceService persistenceService,
         DagRunProcessor dagRunScheduler,
         TaskRunExecutor taskRunExecutor
     ) {
         super(config, DagRunExecutor.class);
+        this.dagService = dagService;
         this.persistenceService = persistenceService;
         this.dagRunScheduler = dagRunScheduler;
         this.taskRunExecutor = taskRunExecutor;
@@ -113,17 +116,17 @@ public class DagRunExecutor extends AbstractLifecycleComponent {
 
         } else if (cmd instanceof FailedDagRunCommand) {
             logger.info("failed dag run {}", dagRun.id());
-            persistenceService.markDagRunFailed(dagRun.id());
+            dagService.markDagRunFailed(dagRun);
             schedule(dagRun.id());
 
         } else if (cmd instanceof SuccessDagRunCommand) {
             logger.info("sucess dag run {}", dagRun.id());
-            persistenceService.markDagRunSuccess(dagRun.id());
+            dagService.markDagRunSuccess(dagRun);
             schedule(dagRun.id());
 
         } else if (cmd instanceof CancelDagRunCommand) {
             logger.info("cancel dag run {}", dagRun.id());
-            persistenceService.markDagRunCanceled(dagRun.id());
+            dagService.markDagRunCanceled(dagRun);
             schedule(dagRun.id());
 
         } else if (cmd instanceof CompleteDagRunCommand) {

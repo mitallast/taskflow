@@ -10,6 +10,7 @@ import org.github.mitallast.taskflow.common.component.ModulesBuilder;
 import org.github.mitallast.taskflow.common.json.JsonModule;
 import org.github.mitallast.taskflow.dag.*;
 import org.github.mitallast.taskflow.docker.DockerModule;
+import org.github.mitallast.taskflow.notification.NotificationModule;
 import org.github.mitallast.taskflow.operation.*;
 import org.github.mitallast.taskflow.persistence.PersistenceModule;
 import org.github.mitallast.taskflow.rest.RestModule;
@@ -27,6 +28,7 @@ public class Main {
         ModulesBuilder modules = new ModulesBuilder();
         modules.add(new ComponentModule(config));
         modules.add(new JsonModule());
+        modules.add(new NotificationModule());
         modules.add(new PersistenceModule());
         modules.add(new OperationModule());
         modules.add(new DagModule());

@@ -21,6 +21,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     private final DagPersistenceService dagPersistence;
     private final DagRunPersistenceService dagRunPersistence;
     private final DagRunExecutor dagRunExecutor;
+    private final DagRunNotificationService notificationService;
     private final OperationService operationService;
     private final JsonService jsonService;
 
@@ -31,7 +32,8 @@ public class DefaultDagService extends AbstractComponent implements DagService {
         DagRunPersistenceService dagRunPersistence,
         DagRunExecutor dagRunExecutor,
         OperationService operationService,
-        JsonService jsonService
+        JsonService jsonService,
+        DagRunNotificationService notificationService
     ) {
         super(config, DagService.class);
         this.dagPersistence = dagPersistence;
@@ -39,6 +41,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
         this.dagRunExecutor = dagRunExecutor;
         this.operationService = operationService;
         this.jsonService = jsonService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -135,6 +138,39 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     }
 
     @Override
+    public boolean markDagRunSuccess(DagRun dagRun) {
+        Preconditions.checkNotNull(dagRun);
+        if (dagRunPersistence.markDagRunSuccess(dagRun.id())) {
+            notificationService.sendDagSuccess(dagRun);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean markDagRunFailed(DagRun dagRun) {
+        Preconditions.checkNotNull(dagRun);
+        if (dagRunPersistence.markDagRunFailed(dagRun.id())) {
+            notificationService.sendDagFailed(dagRun);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean markDagRunCanceled(DagRun dagRun) {
+        Preconditions.checkNotNull(dagRun);
+        if (dagRunPersistence.markDagRunCanceled(dagRun.id())) {
+            notificationService.sendDagCanceled(dagRun);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public boolean markTaskRunSuccess(DagRun dagRun, TaskRun taskRun, OperationResult operationResult) {
         if (dagRunPersistence.markTaskRunSuccess(taskRun.id(), operationResult)) {
             dagRunExecutor.schedule(dagRun.id());
@@ -147,6 +183,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     @Override
     public boolean markTaskRunFailed(DagRun dagRun, TaskRun taskRun, OperationResult operationResult) {
         if (dagRunPersistence.markTaskRunFailed(taskRun.id(), operationResult)) {
+            notificationService.sendTaskFailed(dagRun, taskRun, operationResult);
             dagRunExecutor.schedule(dagRun.id());
             return true;
         } else {
