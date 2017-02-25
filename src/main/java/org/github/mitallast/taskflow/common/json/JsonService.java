@@ -12,9 +12,7 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigRenderOptions;
+import com.typesafe.config.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
@@ -194,7 +192,13 @@ public class JsonService extends AbstractComponent {
             gen.writeFieldName("reference");
             gen.writeObject(value.reference());
             gen.writeFieldName("schema");
-            gen.writeObject(value.schema());
+
+            ConfigList schema = value.schema();
+            gen.writeStartArray();
+            for (ConfigValue configValue : schema) {
+                gen.writeObject(configValue.unwrapped());
+            }
+            gen.writeEndArray();
             gen.writeEndObject();
         }
     }

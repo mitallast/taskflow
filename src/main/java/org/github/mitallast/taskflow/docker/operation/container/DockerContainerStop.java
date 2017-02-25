@@ -1,9 +1,12 @@
 package org.github.mitallast.taskflow.docker.operation.container;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.api.exception.NotModifiedException;
 import com.github.dockerjava.api.model.Container;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigList;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.docker.DockerService;
 import org.github.mitallast.taskflow.operation.Operation;
@@ -34,29 +37,40 @@ public class DockerContainerStop extends AbstractComponent implements Operation 
     }
 
     @Override
-    public Config schema() {
-        return config.getConfig("schema");
+    public ConfigList schema() {
+        return config.getList("schema");
     }
 
     @Override
     public OperationResult run(OperationCommand command) throws IOException, InterruptedException {
         DockerClient docker = dockerService.docker();
         Config config = command.config().withFallback(reference());
+        Config filters = config.getConfig("filters");
 
-        String filter = config.getString("filter");
+        logger.info("filters: {}", filters);
+        List<Container> containers = dockerService.containers(filters);
 
-        List<Container> containers = docker.listContainersCmd()
-            .withLabelFilter(filter)
-            .withShowAll(true)
-            .exec();
-
+        StringBuilder output = new StringBuilder();
         for (Container container : containers) {
-            docker.stopContainerCmd(container.getId()).exec();
+            try {
+                docker.stopContainerCmd(container.getId()).exec();
+                output.append("container stopped: ")
+                    .append(container.getId())
+                    .append('\n');
+            } catch (NotFoundException e) {
+                output.append("container not found: ")
+                    .append(container.getId())
+                    .append('\n')
+                    .append(e.getMessage());
+                return new OperationResult(OperationStatus.FAILED, output.toString());
+            } catch (NotModifiedException e) {
+                output.append("container already stopped: ")
+                    .append(container.getId())
+                    .append('\n')
+                    .append(e.getMessage());
+                return new OperationResult(OperationStatus.FAILED, output.toString());
+            }
         }
-
-        return new OperationResult(
-            OperationStatus.SUCCESS,
-            "containers stopped: " + containers
-        );
+        return new OperationResult(OperationStatus.SUCCESS, output.toString());
     }
 }

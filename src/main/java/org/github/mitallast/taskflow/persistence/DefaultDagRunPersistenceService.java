@@ -170,7 +170,7 @@ public class DefaultDagRunPersistenceService extends AbstractComponent implement
             ImmutableListMultimap.Builder<Long, TaskRun> taskRunBuilder = ImmutableListMultimap.builder();
             context.selectFrom(table.task_run)
                 .where(field.dag_run_id.in(map(dagRunList, DagRun::id)))
-                .orderBy(field.id.desc())
+                .orderBy(field.start_date.asc().nullsLast(), field.id.desc())
                 .fetch()
                 .forEach(record -> taskRunBuilder.put(record.get(field.dag_run_id), taskRun(record, taskMap.get(record.get(field.task_id)))));
             ImmutableListMultimap<Long, TaskRun> taskRunMap = taskRunBuilder.build();

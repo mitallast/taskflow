@@ -2,6 +2,7 @@ package org.github.mitallast.taskflow.operation.shell;
 
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigList;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.operation.Operation;
 import org.github.mitallast.taskflow.operation.OperationCommand;
@@ -33,8 +34,8 @@ public class ShellOperation extends AbstractComponent implements Operation {
     }
 
     @Override
-    public Config schema() {
-        return config.getConfig("schema");
+    public ConfigList schema() {
+        return config.getList("schema");
     }
 
     @Override

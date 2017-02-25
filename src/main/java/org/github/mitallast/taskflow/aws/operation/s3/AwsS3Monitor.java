@@ -2,10 +2,10 @@ package org.github.mitallast.taskflow.aws.operation.s3;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigList;
 import org.github.mitallast.taskflow.aws.AwsService;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.operation.Operation;
@@ -14,6 +14,7 @@ import org.github.mitallast.taskflow.operation.OperationResult;
 import org.github.mitallast.taskflow.operation.OperationStatus;
 
 import java.io.IOException;
+import java.util.List;
 
 public class AwsS3Monitor extends AbstractComponent implements Operation {
 
@@ -36,8 +37,8 @@ public class AwsS3Monitor extends AbstractComponent implements Operation {
     }
 
     @Override
-    public Config schema() {
-        return config.getConfig("schema");
+    public ConfigList schema() {
+        return config.getList("schema");
     }
 
     @Override

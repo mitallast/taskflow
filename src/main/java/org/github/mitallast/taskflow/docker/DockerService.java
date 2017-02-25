@@ -1,14 +1,23 @@
 package org.github.mitallast.taskflow.docker;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.ListContainersCmd;
+import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
+import com.github.dockerjava.core.util.FiltersBuilder;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 
+import java.util.List;
+
 import static com.github.dockerjava.core.DefaultDockerClientConfig.*;
+import static org.github.mitallast.taskflow.common.Immutable.toMultimap;
+import static org.github.mitallast.taskflow.docker.Hack.filters;
 
 public class DockerService extends AbstractComponent {
 
@@ -56,5 +65,18 @@ public class DockerService extends AbstractComponent {
 
     public DockerClient docker() {
         return docker;
+    }
+
+    public List<Container> containers(Config filters) {
+        ImmutableMultimap<String, String> filtersMap = toMultimap(filters);
+
+        ListContainersCmd cmd = docker.listContainersCmd();
+        FiltersBuilder filtersBuilder = filters(cmd);
+        for (String key : filtersMap.keySet()) {
+            ImmutableCollection<String> strings = filtersMap.get(key);
+            filtersBuilder.withFilter(key, strings.toArray(new String[strings.size()]));
+        }
+
+        return cmd.withShowAll(true).exec();
     }
 }

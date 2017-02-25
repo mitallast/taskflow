@@ -2,9 +2,12 @@ package org.github.mitallast.taskflow.docker.operation.container;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.exception.ConflictException;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigList;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.docker.DockerService;
 import org.github.mitallast.taskflow.operation.Operation;
@@ -13,7 +16,9 @@ import org.github.mitallast.taskflow.operation.OperationResult;
 import org.github.mitallast.taskflow.operation.OperationStatus;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.List;
+
+import static org.github.mitallast.taskflow.common.Immutable.toMap;
 
 public class DockerContainerCreate extends AbstractComponent implements Operation {
     private final DockerService dockerService;
@@ -35,8 +40,8 @@ public class DockerContainerCreate extends AbstractComponent implements Operatio
     }
 
     @Override
-    public Config schema() {
-        return config.getConfig("schema");
+    public ConfigList schema() {
+        return config.getList("schema");
     }
 
     @Override
@@ -47,24 +52,32 @@ public class DockerContainerCreate extends AbstractComponent implements Operatio
         String image = config.getString("image");
         String name = config.getString("name");
 
-        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
-        config.getConfig("labels")
-            .entrySet()
-            .forEach(entry -> builder.put(entry.getKey(), entry.getValue().unwrapped().toString()));
-        Map<String, String> labels = builder.build();
+        ImmutableMap<String, String> labels = toMap(config.getConfig("labels"));
 
         logger.info("create container from image {}", image);
         logger.info("container labels {}", labels);
 
-        CreateContainerResponse exec = docker.createContainerCmd(image)
-            .withName(name)
-            .withLabels(labels)
-            .withEnv(command.environment().list())
-            .exec();
+        try {
+            CreateContainerResponse exec = docker.createContainerCmd(image)
+                .withName(name)
+                .withLabels(labels)
+                .withEnv(command.environment().list())
+                .exec();
 
-        return new OperationResult(
-            OperationStatus.SUCCESS,
-            exec.toString()
-        );
+            return new OperationResult(
+                OperationStatus.SUCCESS,
+                "container created: " + exec.getId()
+            );
+        } catch (NotFoundException e) {
+            return new OperationResult(
+                OperationStatus.FAILED,
+                "container not found: " + e.getMessage()
+            );
+        } catch (ConflictException e) {
+            return new OperationResult(
+                OperationStatus.FAILED,
+                "container name conflict: " + e.getMessage()
+            );
+        }
     }
 }

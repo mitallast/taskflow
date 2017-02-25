@@ -157,6 +157,7 @@ public class DefaultDagPersistenceService extends AbstractComponent implements D
             ImmutableListMultimap.Builder<Long, Task> tasksBuilder = ImmutableListMultimap.builder();
             context.selectFrom(table.task)
                 .where(field.dag_id.in(ids))
+                .orderBy(field.id.asc())
                 .fetch()
                 .forEach(record -> tasksBuilder.put(record.get(field.dag_id), task(record)));
             ImmutableListMultimap<Long, Task> tasks = tasksBuilder.build();
@@ -183,6 +184,7 @@ public class DefaultDagPersistenceService extends AbstractComponent implements D
                     ImmutableList.Builder<Task> tasks = new ImmutableList.Builder<>();
                     context.selectFrom(table.task)
                         .where(field.dag_id.eq(id))
+                        .orderBy(field.id.asc())
                         .fetch()
                         .forEach(t -> tasks.add(task(t)));
                     return dag(record, tasks.build());
@@ -196,6 +198,7 @@ public class DefaultDagPersistenceService extends AbstractComponent implements D
             ImmutableListMultimap.Builder<Long, Task> tasksBuilder = ImmutableListMultimap.builder();
             context.selectFrom(table.task)
                 .where(field.dag_id.in(ids))
+                .orderBy(field.id.asc())
                 .fetch()
                 .forEach(record -> tasksBuilder.put(record.get(field.dag_id), task(record)));
             ImmutableListMultimap<Long, Task> tasks = tasksBuilder.build();
@@ -220,6 +223,7 @@ public class DefaultDagPersistenceService extends AbstractComponent implements D
                     ImmutableList.Builder<Task> tasks = new ImmutableList.Builder<>();
                     context.selectFrom(table.task)
                         .where(field.dag_id.eq(record.get(field.id)))
+                        .orderBy(field.id.asc())
                         .fetch()
                         .forEach(t -> tasks.add(task(t)));
                     return dag(record, tasks.build());

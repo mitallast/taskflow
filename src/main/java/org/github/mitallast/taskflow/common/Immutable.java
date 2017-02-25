@@ -1,10 +1,11 @@
 package org.github.mitallast.taskflow.common;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.*;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigList;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueType;
 
 import java.util.*;
 import java.util.function.Function;
@@ -113,6 +114,55 @@ public final class Immutable {
     public static <T> ImmutableList<T> append(ImmutableList<T> list, T... values) {
         ImmutableList.Builder<T> builder = ImmutableList.builder();
         builder.addAll(list).add(values);
+        return builder.build();
+    }
+
+    public static ImmutableMap<String, String> toMap(Config config) {
+        ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+        for (Map.Entry<String, ConfigValue> entry : config.entrySet()) {
+            switch (entry.getValue().valueType()) {
+                case BOOLEAN:
+                case NUMBER:
+                case STRING:
+                    String value = entry.getValue().unwrapped().toString();
+                    builder.put(entry.getKey(), value);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unexpected entry type");
+            }
+        }
+        return builder.build();
+    }
+
+    public static ImmutableMultimap<String, String> toMultimap(Config config) {
+        ImmutableMultimap.Builder<String, String> builder = ImmutableMultimap.builder();
+        for (Map.Entry<String, ConfigValue> entry : config.entrySet()) {
+            switch (entry.getValue().valueType()) {
+                case BOOLEAN:
+                case NUMBER:
+                case STRING:
+                    String value = entry.getValue().unwrapped().toString();
+                    builder.put(entry.getKey(), value);
+                    break;
+                case LIST:
+                    ConfigList list = ((ConfigList) entry.getValue());
+                    for (ConfigValue configValue : list) {
+                        switch (configValue.valueType()) {
+                            case BOOLEAN:
+                            case NUMBER:
+                            case STRING:
+                                String listValue = entry.getValue().unwrapped().toString();
+                                builder.put(entry.getKey(), listValue);
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Unexpected entry type");
+                        }
+                    }
+
+                default:
+                    throw new IllegalArgumentException("Unexpected entry type");
+            }
+        }
         return builder.build();
     }
 }

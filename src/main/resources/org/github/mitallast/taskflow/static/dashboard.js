@@ -157,6 +157,10 @@
                 }
             });
         };
+        $scope.removeTask = function($index) {
+            $scope.dag.tasks.splice($index, 1);
+            $scope.errors = false;
+        };
         $scope.operations = [];
         $scope.operationsMap = {};
         $http.get('/api/operation')
@@ -255,7 +259,7 @@
                 if($scope.cancelable) {
                     $timeout(function(){
                       $scope.load();
-                    },1000)
+                    },100)
                 }
             });
         };
@@ -452,7 +456,7 @@
 
                         rectangles.append("text")
                             .text(function(d){
-                                return "#" + d.id + " " + d.task.token + ":" + d.task.version;
+                                return d.task.token;
                             })
                             .attr("x", function(d){
                                 return (timeScale(parseFinishDate(d.finishDate))-timeScale(new Date(d.startDate)))/2 + timeScale(new Date(d.startDate));

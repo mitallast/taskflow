@@ -129,87 +129,122 @@
 <script type="text/ng-template" id="/dag-create.html">
     <h2 class="page-header">Create DAG</h2>
 
-    <form name="dagForm" novalidate ng-submit="dagForm.$valid && createDag()">
+    <form name="dagForm" ng-submit="dagForm.$valid && createDag()" class="form-horizontal">
         <div class="form-group" ng-class="{'has-error':errors.token}">
-            <label class="control-label">Token</label>
-            <input ng-model="dag.token" name="token" class="form-control" placeholder="token">
-            <span class="help-block" ng-show="errors.token">{{errors.token}}</span>
+            <label class="control-label col-sm-2">Token</label>
+            <div class="col-sm-10">
+                <input ng-model="dag.token" name="token" class="form-control" placeholder="token">
+                <span class="help-block" ng-show="errors.token">{{errors.token}}</span>
+            </div>
         </div>
 
         <div class="form-group" ng-class="{'has-error':errors.tasks_list}">
-            <h4>Tasks</h4>
-            <span class="help-block" ng-show="errors.tasks_list">{{errors.tasks_list}}</span>
+            <div class="col-sm-offset-2 col-sm-10">
+                <span class="help-block" ng-show="errors.tasks_list">{{errors.tasks_list}}</span>
+            </div>
         </div>
 
         <ng-include src="'/dag-tasks-form.html'"></ng-include>
 
-        <button ng-click="addTask()" type="button" class="btn btn-default">Add task</button>
-        <button ng-click="validateDag()" type="button" class="btn btn-default">Validate</button>
-
-        <button type="submit" class="btn btn-primary" ng-disabled="dagForm.$invalid">Submit</button>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button ng-click="addTask()" type="button" class="btn btn-default">Add task</button>
+                <button ng-click="validateDag()" type="button" class="btn btn-default">Validate</button>
+                <button type="submit" class="btn btn-primary" ng-disabled="dagForm.$invalid">Submit</button>
+            </div>
+        </div>
     </form>
 </script>
 <script type="text/ng-template" id="/dag-update.html">
     <h2 class="page-header">Update DAG {{dag.token}}:{{dag.version}}</h2>
 
-    <form name="create-dag" ng-submit="updateDag()">
+    <form name="create-dag" ng-submit="updateDag()" class="form-horizontal">
         <div class="form-group" ng-class="{'has-error':errors.tasks_list}">
-            <h4>Tasks</h4>
             <span class="help-block" ng-show="errors.tasks_list">{{errors.tasks_list}}</span>
         </div>
 
         <ng-include src="'/dag-tasks-form.html'"></ng-include>
 
-        <button ng-click="addTask()" type="button" class="btn btn-default">Add task</button>
-        <button ng-click="validateDag()" type="button" class="btn btn-default">Validate</button>
-
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button ng-click="addTask()" type="button" class="btn btn-default">Add task</button>
+                <button ng-click="validateDag()" type="button" class="btn btn-default">Validate</button>
+                <button type="submit" class="btn btn-primary" ng-disabled="dagForm.$invalid">Submit</button>
+            </div>
+        </div>
     </form>
 </script>
 <script type="text/ng-template" id="/dag-tasks-form.html">
     <div class="panel panel-default" ng-repeat="task in dag.tasks" ng-form="taskForm">
         <div class="panel-body">
-            <label class="control-label">task: {{task.token}}</label>
             <div class="form-group" ng-class="{'has-error':errors.tasks[$index].token}">
-                <label class="control-label">Token</label>
-                <input ng-model="task.token" name="token" required class="form-control" placeholder="token">
-                <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].token}}</span>
+                <label class="control-label col-sm-2">Token</label>
+                <div class="col-sm-10">
+                    <input ng-model="task.token" name="token" required class="form-control" placeholder="token">
+                    <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].token}}</span>
+                </div>
             </div>
             <div class="form-group" ng-class="{'has-error':errors.tasks[$index].depends}">
-                <label class="control-label">Depends</label>
-                <textarea json-text depends ng-model="task.depends" name="depends" required class="form-control"></textarea>
-                <span class="help-block" ng-show="errors.tasks[$index].depends">{{errors.tasks[$index].depends}}</span>
+                <label class="control-label col-sm-2">Depends</label>
+                <div class="col-sm-10">
+                    <textarea json-text depends ng-model="task.depends" name="depends" required class="form-control"></textarea>
+                    <span class="help-block" ng-show="errors.tasks[$index].depends">{{errors.tasks[$index].depends}}</span>
+                </div>
             </div>
             <div class="form-group" ng-class="{'has-error':errors.tasks[$index].retry}">
-                <label class="control-label">Retry</label>
-                <input ng-model="task.retry" name="retry" required class="form-control" placeholder="0">
-                <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].retry}}</span>
+                <label class="control-label col-sm-2">Retry</label>
+                <div class="col-sm-10">
+                    <input ng-model="task.retry" name="retry" required class="form-control" placeholder="0">
+                    <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].retry}}</span>
+                </div>
             </div>
             <div class="form-group" ng-class="{'has-error':errors.tasks[$index].operation}">
-                <label class="control-label">Operation</label>
-                <select ng-model="task.operation" name="operation" required class="form-control" ng-options="item for item in operations"></select>
-                <span class="help-block" ng-show="errors.tasks[$index].operation">{{errors.tasks[$index].operation}}</span>
+                <label class="control-label col-sm-2">Operation</label>
+                <div class="col-sm-10">
+                    <select ng-model="task.operation" name="operation" required class="form-control" ng-options="item for item in operations"></select>
+                    <span class="help-block" ng-show="errors.tasks[$index].operation">{{errors.tasks[$index].operation}}</span>
+                </div>
             </div>
-
-            <div ng-repeat="(field, schema) in operationsMap[task.operation].schema" ng-switch on="schema.type">
+            <div ng-repeat="schema in operationsMap[task.operation].schema" ng-switch on="schema.type">
                 <div class="form-group" ng-switch-when="select">
-                    <label class="control-label">{{field}}</label>
-                    <select ng-model="task.command.config[field]" class="form-control" ng-options="item for item in schema.options"></select>
+                    <label class="control-label col-sm-2">{{schema.label}}</label>
+                    <div class="col-sm-10">
+                        <select ng-model="task.command.config[schema.field]" class="form-control" ng-options="item for item in schema.options"></select>
+                    </div>
                 </div>
                 <div class="form-group" ng-switch-when="text">
-                    <label class="control-label">{{field}}</label>
-                    <input ng-model="task.command.config[field]" class="form-control">
+                    <label class="control-label col-sm-2">{{schema.label}}</label>
+                    <div class="col-sm-10">
+                        <input ng-model="task.command.config[schema.field]" class="form-control">
+                    </div>
                 </div>
                 <div class="form-group" ng-switch-when="json">
-                    <label class="control-label">{{field}}</label>
-                    <textarea json-text ng-model="task.command.config[field]" class="form-control"></textarea>
+                    <label class="control-label col-sm-2">{{schema.label}}</label>
+                    <div class="col-sm-10">
+                        <textarea json-text ng-model="task.command.config[schema.field]" class="form-control"></textarea>
+                    </div>
+                </div>
+                <div class="form-group" ng-switch-when="boolean">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <div class="checkbox">
+                            <label> <input type="checkbox" ng-model="task.command.config[schema.field]">
+                                {{schema.label}} </label>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="form-group" ng-class="{'has-error':errors.tasks[$index].command.environment}">
-                <label class="control-label">Operation Environment</label>
-                <textarea json-text ng-model="task.command.environment" class="form-control"></textarea>
-                <span class="help-block" ng-show="errors.tasks[$index].command.environment">{{errors.tasks[$index].command.environment}}</span>
+                <label class="control-label col-sm-2">Operation Environment</label>
+                <div class="col-sm-10">
+                    <textarea json-text ng-model="task.command.environment" class="form-control"></textarea>
+                    <span class="help-block" ng-show="errors.tasks[$index].command.environment">{{errors.tasks[$index].command.environment}}</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button ng-click="removeTask($index)" type="button" class="btn btn-danger">Remove task</button>
+                </div>
             </div>
         </div>
     </div>
@@ -300,17 +335,23 @@
 
     <div class="panel panel-default" ng-repeat="run in dag_run.tasks">
         <div class="panel-body">
-            <div>
-                <button type="button" class="console-caret" aria-label="Caret" ng-show="run.operationResult.output" ng-click="toggleOutput(run)">
-                    <span class="caret"></span>
-                </button>
-                <span class="panel-title inline">#{{run.id}} {{run.task.token}}:{{run.task.version}}</span>
-                <span class="label label-info">run:{{run.status}}</span>
-                <span class="label label-info" ng-show="run.operationResult.status">op:{{run.operationResult.status}}</span>
+            <div class="row">
+                <div class="col-sm-2">
+                    <span class="panel-title inline">{{run.task.token}}</span>
+                </div>
+                <div class="col-sm-9">
+                    <span class="label label-info">run:{{run.status}}</span>
+                    <span class="label label-info" ng-show="run.operationResult.status">op:{{run.operationResult.status}}</span>
+                    <span class="label label-default">created:{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                    <span class="label label-default" ng-show="run.startDate">start:{{run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                    <span class="label label-default" ng-show="run.finishDate">finish:{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                </div>
+                <div class="col-sm-1">
+                    <button type="button" class="console-caret" aria-label="Caret" ng-show="run.operationResult.output" ng-click="toggleOutput(run)">
+                        <span class="caret"></span>
+                    </button>
+                </div>
 
-                <span class="label label-default">created:{{run.createdDate | date:'yyyy-MM-dd HH:mm:ss'}}</span>
-                <span class="label label-default" ng-show="run.startDate">start:{{run.startDate | date:'yyyy-MM-dd HH:mm:ss'}}</span>
-                <span class="label label-default" ng-show="run.finishDate">finish:{{run.finishDate | date:'yyyy-MM-dd HH:mm:ss'}}</span>
             </div>
             <pre class="console" ng-show="run._show">{{run.operationResult.output}}</pre>
         </div>
