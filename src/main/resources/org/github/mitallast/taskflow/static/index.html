@@ -187,14 +187,14 @@
             <div class="form-group" ng-class="{'has-error':errors.tasks[$index].depends}">
                 <label class="control-label col-sm-2">Depends</label>
                 <div class="col-sm-10">
-                    <textarea json-text depends ng-model="task.depends" name="depends" required class="form-control"></textarea>
+                    <div ng-model="task.depends" json-text ui-ace="{onLoad:aceJson}" class="ace_short"></div>
                     <span class="help-block" ng-show="errors.tasks[$index].depends">{{errors.tasks[$index].depends}}</span>
                 </div>
             </div>
             <div class="form-group" ng-class="{'has-error':errors.tasks[$index].retry}">
                 <label class="control-label col-sm-2">Retry</label>
                 <div class="col-sm-10">
-                    <input ng-model="task.retry" name="retry" required class="form-control" placeholder="0">
+                    <input ng-model="task.retry" name="retry" type="number" required class="form-control" placeholder="0">
                     <span class="help-block" ng-show="errors.tasks[$index].token">{{errors.tasks[$index].retry}}</span>
                 </div>
             </div>
@@ -221,7 +221,13 @@
                 <div class="form-group" ng-switch-when="json">
                     <label class="control-label col-sm-2">{{schema.label}}</label>
                     <div class="col-sm-10">
-                        <textarea json-text ng-model="task.command.config[schema.field]" class="form-control"></textarea>
+                        <div ng-model="task.command.config[schema.field]" json-text ui-ace="{onLoad:aceJson}"></div>
+                    </div>
+                </div>
+                <div class="form-group" ng-switch-when="json-array">
+                    <label class="control-label col-sm-2">{{schema.label}}</label>
+                    <div class="col-sm-10">
+                        <div ng-model="task.command.config[schema.field]" json-text ui-ace="{onLoad:aceJson}" class="ace_short"></div>
                     </div>
                 </div>
                 <div class="form-group" ng-switch-when="boolean">
@@ -237,7 +243,7 @@
             <div class="form-group" ng-class="{'has-error':errors.tasks[$index].command.environment}">
                 <label class="control-label col-sm-2">Operation Environment</label>
                 <div class="col-sm-10">
-                    <textarea json-text ng-model="task.command.environment" class="form-control"></textarea>
+                    <div ng-model="task.command.environment" json-text ui-ace="{onLoad:aceJson}"></div>
                     <span class="help-block" ng-show="errors.tasks[$index].command.environment">{{errors.tasks[$index].command.environment}}</span>
                 </div>
             </div>
@@ -427,6 +433,10 @@
 <script src="/resources/webjars/d3js/4.2.1/d3.min.js"></script>
 <script src="/resources/webjars/angularjs/1.6.1/angular.min.js"></script>
 <script src="/resources/webjars/angularjs/1.6.1/angular-route.min.js"></script>
+
+<script src="/resources/webjars/ace/1.1.7-1/src-min-noconflict/ace.js"></script>
+<script src="/resources/webjars/angular-ui-ace/0.2.3/ui-ace.min.js"></script>
+
 <script src="/static/dashboard.js"></script>
 </body>
 </html>

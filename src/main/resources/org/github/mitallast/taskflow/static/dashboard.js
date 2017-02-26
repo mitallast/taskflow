@@ -1,7 +1,18 @@
 (function(){
     'strict';
 
-    angular.module('dag', ['ngRoute'])
+    angular.module('dag', ['ngRoute', 'ui.ace'])
+    .run(function($rootScope){
+        $rootScope.aceJson = function(editor) {
+            var session = editor.getSession();
+            session.setTabSize(4);
+            session.setUseSoftTabs(true);
+            session.setMode('ace/mode/json');
+
+            editor.renderer.setShowGutter(true);
+            editor.setShowPrintMargin(false);
+        };
+    })
     .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider){
         $locationProvider.html5Mode(false);
         $locationProvider.hashPrefix("");
@@ -49,6 +60,10 @@
                 templateUrl: '/operations.html',
                 controller: 'OperationsController'
             })
+            .when('/test-ace', {
+                templateUrl: '/test-ace.html',
+                controller: 'OperationsController'
+            })
             .otherwise({
                 redirectTo: '/'
             });
@@ -68,6 +83,7 @@
             ],
             [
                 {href:'operations', title:'Operations'},
+                {href:'test-ace', title:'test-ace'},
             ]
         ];
         $scope.activeClass = function(page){

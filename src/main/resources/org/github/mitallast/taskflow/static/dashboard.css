@@ -107,7 +107,7 @@ body {
     background: #212121;
     color: #edede3;
     font-family: 'Roboto Mono', Monaco, "Courier New", monospace;
-    font-weight: 100;
+    font-weight: 200;
     border: none;
     margin: 10px 0 0 0;
 }
@@ -131,4 +131,21 @@ button.console-caret {
     line-height: 1;
     color: #777;
     text-shadow: 0 1px 0 #fff;
+}
+
+.ace_editor {
+    height: 92px;
+    font-family: 'Roboto Mono', Monaco, "Courier New", monospace !important;
+    font-weight: 200 !important;
+    font-size: 13px !important;
+    margin: 6px 0 6px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.ace_editor.ace_short {
+    height: 56px;
+    margin: 6px 0 6px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 }
