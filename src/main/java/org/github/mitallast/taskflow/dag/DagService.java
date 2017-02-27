@@ -14,11 +14,17 @@ public interface DagService {
 
     DagRun createDagRun(Dag dag);
 
+    boolean startDagRun(DagRun dagRun);
+
     boolean markDagRunSuccess(DagRun dagRun);
 
     boolean markDagRunFailed(DagRun dagRun);
 
     boolean markDagRunCanceled(DagRun dagRun);
+
+    TaskRun retry(DagRun dagRun, TaskRun taskRun);
+
+    boolean startTaskRun(DagRun dagRun, TaskRun taskRun);
 
     boolean markTaskRunSuccess(DagRun dagRun, TaskRun taskRun, OperationResult operationResult);
 

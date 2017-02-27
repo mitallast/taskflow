@@ -1,7 +1,7 @@
 (function(){
     'strict';
 
-    angular.module('dag', ['ngRoute', 'ui.ace'])
+    angular.module('dag', ['ngRoute', 'ngWebSocket', 'ui.ace'])
     .run(function($rootScope){
         $rootScope.aceJson = function(editor) {
             var session = editor.getSession();
@@ -68,6 +68,31 @@
                 redirectTo: '/'
             });
     }])
+    .factory('$updates', function($websocket) {
+        var stream = $websocket('ws://localhost:8080/ws/');
+        var subscriptions = {};
+        stream.onMessage(function(frame) {
+            var message = JSON.parse(frame.data);
+            console.log("ws event", message);
+            var consumers = subscriptions[message.channel];
+            if(consumers) {
+                console.log("consumers", consumers);
+                consumers.forEach(function(subscriber){
+                    subscriber(message.event);
+                });
+            }
+        });
+        return {
+            subscribe: function(channel, consumer) {
+                console.log("subscribe", channel);
+                stream.send(JSON.stringify({ action: 'subscribe', channel: channel }));
+                if(!(subscriptions[channel])){
+                    subscriptions[channel] = [];
+                }
+                subscriptions[channel].push(consumer);
+            }
+        };
+    })
     .controller('SidebarCtrl', function($scope, $location){
         $scope.menus = [
             [
@@ -252,13 +277,10 @@
             $scope.runs = response.data;
         });
     })
-    .controller('DagRunIdCtrl', function($scope, $http, $routeParams, $timeout){
+    .controller('DagRunIdCtrl', function($scope, $http, $routeParams, $timeout, $updates){
         $scope.cancelable = false;
         $scope.cancelDagRun = function() {
-            $http.post('/api/dag/run/id/' + $routeParams.id + '/cancel')
-            .then(function(response){
-                $scope.load();
-            });
+            $http.post('/api/dag/run/id/' + $routeParams.id + '/cancel');
         };
         $scope.toggleOutput = function(run) {
             if(run._show){
@@ -267,15 +289,23 @@
                 run._show = true;
             }
         };
+        $scope.updateDagRun = function(dag_run) {
+            $scope.dag_run = dag_run;
+            $scope.cancelable = dag_run.status == "PENDING" || dag_run.status == "RUNNING";
+        }
         $scope.load = function() {
             $http.get('/api/dag/run/id/' + $routeParams.id)
             .then(function(response){
-                $scope.dag_run = response.data;
-                $scope.cancelable = $scope.dag_run.status == "PENDING" || $scope.dag_run.status == "RUNNING";
+                $scope.updateDagRun(response.data)
                 if($scope.cancelable) {
-                    $timeout(function(){
-                      $scope.load();
-                    },100)
+                    $updates.subscribe("dag/run/" + $routeParams.id, function($event){
+                        console.log($event);
+                        switch($event.type) {
+                            case "DagRunUpdated":
+                                $scope.updateDagRun($event.dagRun);
+                                break;
+                        }
+                    });
                 }
             });
         };
@@ -370,7 +400,6 @@
 
                     // in millis
                     var duration = max - min;
-                    console.log(duration);
 
                     var timeScale = d3.scaleTime()
                         .domain([
@@ -406,9 +435,6 @@
                         var month = week * 4;
                         var year = month * 4;
 
-                        console.log('minute', minute);
-                        console.log('hour', hour);
-
                         var tickMap = [
                             { duration: year,        ticks: d3.timeMonth.every(2) },
                             { duration: month,       ticks: d3.timeWeek.every(1) },
@@ -424,7 +450,6 @@
                         ];
 
                         var ticks = tickMap.filter(function(t){ return t.duration < duration; })[0]
-                        console.log(ticks);
                         ticks = ticks.ticks;
 
                         var xAxis = d3.axisBottom(timeScale)
@@ -455,7 +480,6 @@
                             .attr("rx", 3)
                             .attr("ry", 3)
                             .attr("x", function(d) {
-                                console.log(new Date(d.startDate))
                                 return timeScale(new Date(d.startDate));
                             })
                             .attr("y", function(d, i){ return i*gap + padding; })

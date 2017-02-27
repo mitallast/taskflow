@@ -6,11 +6,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import org.github.mitallast.taskflow.common.EventBus;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.common.error.Errors;
 import org.github.mitallast.taskflow.common.error.MaybeErrors;
 import org.github.mitallast.taskflow.common.json.JsonService;
 import org.github.mitallast.taskflow.executor.DagRunExecutor;
+import org.github.mitallast.taskflow.executor.event.DagRunEvent;
+import org.github.mitallast.taskflow.executor.event.DagRunUpdated;
 import org.github.mitallast.taskflow.operation.OperationResult;
 import org.github.mitallast.taskflow.operation.OperationService;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
@@ -24,6 +27,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     private final DagRunNotificationService notificationService;
     private final OperationService operationService;
     private final JsonService jsonService;
+    private final EventBus<DagRunEvent> eventBus;
 
     @Inject
     public DefaultDagService(
@@ -33,7 +37,8 @@ public class DefaultDagService extends AbstractComponent implements DagService {
         DagRunExecutor dagRunExecutor,
         OperationService operationService,
         JsonService jsonService,
-        DagRunNotificationService notificationService
+        DagRunNotificationService notificationService,
+        EventBus<DagRunEvent> eventBus
     ) {
         super(config, DagService.class);
         this.dagPersistence = dagPersistence;
@@ -42,6 +47,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
         this.operationService = operationService;
         this.jsonService = jsonService;
         this.notificationService = notificationService;
+        this.eventBus = eventBus;
     }
 
     @Override
@@ -138,9 +144,21 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     }
 
     @Override
+    public boolean startDagRun(DagRun dagRun) {
+        Preconditions.checkNotNull(dagRun);
+        if (dagRunPersistence.startDagRun(dagRun.id())) {
+            trigger(dagRun);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public boolean markDagRunSuccess(DagRun dagRun) {
         Preconditions.checkNotNull(dagRun);
         if (dagRunPersistence.markDagRunSuccess(dagRun.id())) {
+            triggerAndRemove(dagRun);
             notificationService.sendDagSuccess(dagRun);
             return true;
         } else {
@@ -152,6 +170,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     public boolean markDagRunFailed(DagRun dagRun) {
         Preconditions.checkNotNull(dagRun);
         if (dagRunPersistence.markDagRunFailed(dagRun.id())) {
+            triggerAndRemove(dagRun);
             notificationService.sendDagFailed(dagRun);
             return true;
         } else {
@@ -163,6 +182,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     public boolean markDagRunCanceled(DagRun dagRun) {
         Preconditions.checkNotNull(dagRun);
         if (dagRunPersistence.markDagRunCanceled(dagRun.id())) {
+            triggerAndRemove(dagRun);
             notificationService.sendDagCanceled(dagRun);
             return true;
         } else {
@@ -171,33 +191,73 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     }
 
     @Override
+    public TaskRun retry(DagRun dagRun, TaskRun taskRun) {
+        try {
+            return dagRunPersistence.retry(dagRun, taskRun);
+        } finally {
+            trigger(dagRun);
+        }
+    }
+
+    @Override
+    public boolean startTaskRun(DagRun dagRun, TaskRun taskRun) {
+        try {
+            return dagRunPersistence.startTaskRun(taskRun.id());
+        } finally {
+            trigger(dagRun);
+        }
+    }
+
+    @Override
     public boolean markTaskRunSuccess(DagRun dagRun, TaskRun taskRun, OperationResult operationResult) {
-        if (dagRunPersistence.markTaskRunSuccess(taskRun.id(), operationResult)) {
-            dagRunExecutor.schedule(dagRun.id());
-            return true;
-        } else {
-            return false;
+        try {
+            return dagRunPersistence.markTaskRunSuccess(taskRun.id(), operationResult);
+        } finally {
+            trigger(dagRun);
         }
     }
 
     @Override
     public boolean markTaskRunFailed(DagRun dagRun, TaskRun taskRun, OperationResult operationResult) {
-        if (dagRunPersistence.markTaskRunFailed(taskRun.id(), operationResult)) {
+        try {
+            return dagRunPersistence.markTaskRunFailed(taskRun.id(), operationResult);
+        } finally {
+            trigger(dagRun);
             notificationService.sendTaskFailed(dagRun, taskRun, operationResult);
-            dagRunExecutor.schedule(dagRun.id());
-            return true;
-        } else {
-            return false;
         }
     }
 
     @Override
     public boolean markTaskRunCanceled(DagRun dagRun, TaskRun taskRun) {
-        if (dagRunPersistence.markTaskRunCanceled(taskRun.id())) {
-            dagRunExecutor.schedule(dagRun.id());
-            return true;
-        } else {
-            return false;
+        try {
+            return dagRunPersistence.markTaskRunCanceled(taskRun.id());
+        } finally {
+            trigger(dagRun);
         }
+    }
+
+    private void triggerAndRemove(DagRun dagRun) {
+        String channel = channel(dagRun);
+        logger.info("trigger remove {} {}", channel, dagRun.id());
+        try {
+            eventBus.trigger(channel, new DagRunUpdated(dagRun));
+            eventBus.remove(channel);
+        } catch (Throwable e) {
+            logger.warn(e);
+        }
+    }
+
+    private void trigger(DagRun dagRun) {
+        String channel = channel(dagRun);
+        logger.info("trigger {} {}", channel, dagRun.id());
+        try {
+            eventBus.trigger(channel, new DagRunUpdated(dagRun));
+        } catch (Throwable e) {
+            logger.warn(e);
+        }
+    }
+
+    private String channel(DagRun dagRun) {
+        return "dag/run/" + dagRun.id();
     }
 }

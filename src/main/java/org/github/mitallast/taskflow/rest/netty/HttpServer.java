@@ -7,16 +7,18 @@ import io.netty.channel.socket.SocketChannel;
 import org.github.mitallast.taskflow.common.netty.NettyServer;
 
 public class HttpServer extends NettyServer {
-    private HttpServerHandler serverHandler;
+    private final HttpServerHandler serverHandler;
+    private final WebSocketFrameHandler webSocketFrameHandler;
 
     @Inject
-    public HttpServer(Config config, HttpServerHandler serverHandler) {
+    public HttpServer(Config config, HttpServerHandler serverHandler, WebSocketFrameHandler webSocketFrameHandler) {
         super(config.getConfig("rest"), HttpServer.class);
         this.serverHandler = serverHandler;
+        this.webSocketFrameHandler = webSocketFrameHandler;
     }
 
     @Override
     protected ChannelInitializer<SocketChannel> channelInitializer() {
-        return new HttpServerInitializer(serverHandler);
+        return new HttpServerInitializer(serverHandler, webSocketFrameHandler);
     }
 }

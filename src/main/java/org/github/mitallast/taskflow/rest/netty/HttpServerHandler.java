@@ -43,12 +43,6 @@ public class HttpServerHandler extends SimpleChannelInboundHandler<FullHttpReque
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        logger.info("channel active: {}", ctx.channel());
-        super.channelActive(ctx);
-    }
-
-    @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         logger.info("channel inactive: {}", ctx.channel());
         super.channelInactive(ctx);
