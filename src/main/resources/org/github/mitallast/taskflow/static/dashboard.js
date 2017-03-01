@@ -3,7 +3,7 @@
 
     angular.module('dag', ['ngRoute', 'ngWebSocket', 'ui.ace'])
     .run(function($rootScope){
-        $rootScope.aceJson = function(editor) {
+        $rootScope.aceJson = function(editor){
             var session = editor.getSession();
             session.setTabSize(4);
             session.setUseSoftTabs(true);
@@ -60,22 +60,18 @@
                 templateUrl: '/operations.html',
                 controller: 'OperationsController'
             })
-            .when('/test-ace', {
-                templateUrl: '/test-ace.html',
-                controller: 'OperationsController'
-            })
             .otherwise({
                 redirectTo: '/'
             });
     }])
-    .factory('$updates', function($websocket) {
+    .factory('$updates', function($websocket){
         var stream = $websocket('ws://localhost:8080/ws/');
         var subscriptions = {};
-        stream.onMessage(function(frame) {
+        stream.onMessage(function(frame){
             var message = JSON.parse(frame.data);
             console.log("ws event", message);
             var consumers = subscriptions[message.channel];
-            if(consumers) {
+            if(consumers){
                 console.log("consumers", consumers);
                 consumers.forEach(function(subscriber){
                     subscriber(message.event);
@@ -83,13 +79,25 @@
             }
         });
         return {
-            subscribe: function(channel, consumer) {
+            subscribe: function(channel, consumer){
                 console.log("subscribe", channel);
                 stream.send(JSON.stringify({ action: 'subscribe', channel: channel }));
-                if(!(subscriptions[channel])){
+                if(!subscriptions[channel]){
                     subscriptions[channel] = [];
                 }
                 subscriptions[channel].push(consumer);
+            },
+            unsubscribe: function(channel, consumer){
+                if(subscriptions[channel]){
+                    subscriptions[channel] = subscriptions[channel]
+                    .filter(function(subscriber){
+                        return subscriber != consumer;
+                    });
+                    if(subscriptions[channel].length == 0){
+                        stream.send(JSON.stringify({ action: 'unsubscribe', channel: channel }));
+                        delete subscriptions[channel];
+                    }
+                }
             }
         };
     })
@@ -108,7 +116,6 @@
             ],
             [
                 {href:'operations', title:'Operations'},
-                {href:'test-ace', title:'test-ace'},
             ]
         ];
         $scope.activeClass = function(page){
@@ -144,15 +151,15 @@
         $scope.operationsMap = {};
         $http.get('/api/operation')
             .then(function(response){
-                $scope.operations = response.data.map(function(item) {
+                $scope.operations = response.data.map(function(item){
                     return item.id;
                 });
-                $scope.operationsMap = response.data.reduce(function(map, item) {
+                $scope.operationsMap = response.data.reduce(function(map, item){
                     map[item.id] = item;
                     return map;
                 }, {});
             });
-        $scope.addTask = function() {
+        $scope.addTask = function(){
             $scope.dag.tasks.push({
                 token: '',
                 operation: '',
@@ -163,7 +170,7 @@
                 }
             });
         };
-        $scope.validateDag = function() {
+        $scope.validateDag = function(){
             $http.put('/api/dag/validate', $scope.dag)
             .then(
                 function(response){
@@ -174,7 +181,7 @@
                 }
             );
         };
-        $scope.createDag = function() {
+        $scope.createDag = function(){
             $http.put('/api/dag', $scope.dag)
             .then(
                 function(response){
@@ -187,7 +194,7 @@
         };
     })
     .controller('DagUpdateCtrl', function($scope, $http, $location, $routeParams){
-        $scope.addTask = function() {
+        $scope.addTask = function(){
             $scope.dag.tasks.push({
                 token: '',
                 operation: '',
@@ -198,7 +205,7 @@
                 }
             });
         };
-        $scope.removeTask = function($index) {
+        $scope.removeTask = function($index){
             $scope.dag.tasks.splice($index, 1);
             $scope.errors = false;
         };
@@ -206,15 +213,15 @@
         $scope.operationsMap = {};
         $http.get('/api/operation')
             .then(function(response){
-                $scope.operations = response.data.map(function(item) {
+                $scope.operations = response.data.map(function(item){
                     return item.id;
                 });
-                $scope.operationsMap = response.data.reduce(function(map, item) {
+                $scope.operationsMap = response.data.reduce(function(map, item){
                     map[item.id] = item;
                     return map;
                 }, {});
             });
-        $scope.validateDag = function() {
+        $scope.validateDag = function(){
             $http.put('/api/dag/validate', $scope.dag)
             .then(
                 function(response){
@@ -225,7 +232,7 @@
                 }
             );
         };
-        $scope.updateDag = function() {
+        $scope.updateDag = function(){
             $http.post('/api/dag', $scope.dag)
             .then(
                 function(response){
@@ -278,40 +285,45 @@
         });
     })
     .controller('DagRunIdCtrl', function($scope, $http, $routeParams, $timeout, $updates){
+        $scope.id = $routeParams.id;
         $scope.cancelable = false;
-        $scope.cancelDagRun = function() {
-            $http.post('/api/dag/run/id/' + $routeParams.id + '/cancel');
+        $scope.cancelDagRun = function(){
+            $http.post('/api/dag/run/id/' + $scope.id + '/cancel');
         };
-        $scope.toggleOutput = function(run) {
+        $scope.toggleOutput = function(run){
             if(run._show){
                 run._show = false;
             }else{
                 run._show = true;
             }
         };
-        $scope.updateDagRun = function(dag_run) {
+        $scope.updateDagRun = function(dag_run){
             $scope.dag_run = dag_run;
             $scope.cancelable = dag_run.status == "PENDING" || dag_run.status == "RUNNING";
         }
-        $scope.load = function() {
-            $http.get('/api/dag/run/id/' + $routeParams.id)
+        $scope.load = function(){
+            $http.get('/api/dag/run/id/' + $scope.id)
             .then(function(response){
                 $scope.updateDagRun(response.data)
-                if($scope.cancelable) {
-                    $updates.subscribe("dag/run/" + $routeParams.id, function($event){
-                        console.log($event);
-                        switch($event.type) {
-                            case "DagRunUpdated":
-                                $scope.updateDagRun($event.dagRun);
-                                break;
-                        }
-                    });
+                if($scope.cancelable){
+                    $updates.subscribe("dag/run/" + $scope.id, $scope.onUpdate);
                 }
             });
         };
+        $scope.onUpdate = function($event){
+            console.log($event);
+            switch($event.type){
+                case "DagRunUpdated":
+                    $scope.updateDagRun($event.dagRun);
+                    break;
+            }
+        };
+        $scope.$on("$destroy", function(){
+            $updates.unsubscribe("dag/run/" + $scope.id, $scope.onUpdate);
+        });
         $scope.load();
     })
-    .controller('DagScheduleCtrl', function($scope, $http) {
+    .controller('DagScheduleCtrl', function($scope, $http){
         $scope.schedules = [];
         $scope.edit = function(schedule){
             schedule.edit = true;
@@ -324,7 +336,7 @@
                 cronExpression: schedule.cronExpression,
             })
             .then(
-                function(response) {
+                function(response){
                     schedule.edit = false;
                     $scope.load();
                 },
@@ -347,7 +359,7 @@
                 $scope.load();
             })
         };
-        $scope.load = function() {
+        $scope.load = function(){
             $http.get('/api/dag/schedule')
             .then(function(response){
                 $scope.schedules = response.data;
@@ -362,21 +374,21 @@
             $scope.operations = response.data;
         });
     })
-    .directive('diagramGantt', function() {
+    .directive('diagramGantt', function(){
         return {
             restrict: 'A',
             scope: true,
             transclude: true,
-            link: function(scope, element, attrs) {
+            link: function(scope, element, attrs){
                 scope.$watch('dag_run', function(){
                     if(scope.dag_run){
                         scope.render(scope.dag_run);
                     }
                 });
-                scope.render = function(dag_run) {
+                scope.render = function(dag_run){
                     element[0].innerHTML = '';
                     var tasks = dag_run.tasks.filter(function(d){ return d.startDate; })
-                    if(tasks.length == 0) {
+                    if(tasks.length == 0){
                         return;
                     }
 
@@ -386,7 +398,9 @@
                     var gap = barHeight + padding;
                     var bottomPadding = 14;
 
-                    var w = 800;
+                    console.log(element[0])
+                    console.log(element[0].offsetWidth)
+                    var w = element[0].offsetWidth;
                     var h = gap * tasks.length + padding * 2 + bottomPadding
 
                     var svg = d3.select(element[0])
@@ -395,8 +409,8 @@
                         .attr("height", h)
                         .attr("class", "svg");
 
-                    var min = d3.min(tasks, function(d) { return new Date(d.startDate); }).getTime();
-                    var max = d3.max(tasks, function(d) { return parseFinishDate(d.finishDate); }).getTime();
+                    var min = d3.min(tasks, function(d){ return new Date(d.startDate); }).getTime();
+                    var max = d3.max(tasks, function(d){ return parseFinishDate(d.finishDate); }).getTime();
 
                     // in millis
                     var duration = max - min;
@@ -418,8 +432,8 @@
                     makeGrid();
                     drawRects(tasks);
 
-                    function parseFinishDate(date) {
-                        if(date) {
+                    function parseFinishDate(date){
+                        if(date){
                             return new Date(date);
                         }else{
                             return new Date();
@@ -479,7 +493,7 @@
                         rectangles.append("rect")
                             .attr("rx", 3)
                             .attr("ry", 3)
-                            .attr("x", function(d) {
+                            .attr("x", function(d){
                                 return timeScale(new Date(d.startDate));
                             })
                             .attr("y", function(d, i){ return i*gap + padding; })
@@ -513,22 +527,22 @@
             }
         };
     })
-    .directive('jsonText', function() {
+    .directive('jsonText', function(){
         return {
             restrict: 'A',
             require: 'ngModel',
-            link: function(scope, element, attr, ngModel) {
-                ngModel.$parsers.push(function(input) {
+            link: function(scope, element, attr, ngModel){
+                ngModel.$parsers.push(function(input){
                     try {
                         var json = JSON.parse(input);
                         ngModel.$setValidity('json', true);
                         return json;
-                    } catch(e) {
+                    } catch(e){
                         ngModel.$setValidity('json', false);
                         return undefined;
                     }
                 });
-                ngModel.$formatters.push(function(data) {
+                ngModel.$formatters.push(function(data){
                     return JSON.stringify(data);
                 });
             }

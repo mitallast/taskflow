@@ -67,10 +67,16 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
             });
             String action = request.getOrDefault("action", "");
             switch (action) {
-                case "subscribe":
+                case "subscribe": {
                     String channel = request.getOrDefault("channel", "");
                     ctx.channel().attr(consumerAttr).get().subscribe(channel);
                     break;
+                }
+                case "unsubscribe": {
+                    String channel = request.getOrDefault("channel", "");
+                    ctx.channel().attr(consumerAttr).get().unsubscribe(channel);
+                    break;
+                }
                 default:
                     logger.warn("unexpected action");
             }
@@ -82,31 +88,38 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
     }
 
     private class ChannelConsumer implements BiConsumer<String, DagRunEvent> {
-        private final Channel channel;
-        private final CopyOnWriteArraySet<String> subscriptions;
+        private final Channel wsChannel;
+        private final CopyOnWriteArraySet<String> channels;
 
-        public ChannelConsumer(Channel channel) {
-            this.channel = channel;
-            subscriptions = new CopyOnWriteArraySet<>();
+        public ChannelConsumer(Channel wsChannel) {
+            this.wsChannel = wsChannel;
+            channels = new CopyOnWriteArraySet<>();
         }
 
         @Override
-        public void accept(String subscription, DagRunEvent event) {
-            String json = jsonService.serialize(ImmutableMap.of("channel", subscription, "event", event));
-            logger.info("send {}: {}", subscription, json);
-            channel.writeAndFlush(new TextWebSocketFrame(json));
+        public void accept(String channel, DagRunEvent event) {
+            String json = jsonService.serialize(ImmutableMap.of("channel", channel, "event", event));
+            logger.info("send {}: {}", channel, json);
+            wsChannel.writeAndFlush(new TextWebSocketFrame(json));
+        }
+
+        public void unsubscribe(String channel) {
+            logger.info("unsubscribe {}", channel);
+            eventBus.unsubscribe(channel, this);
+            channels.remove(channel);
         }
 
         public void unsubscribe() {
-            for (String subscription : subscriptions) {
-                logger.info("unsubscribe {}", subscription);
-                eventBus.unsubscribe(subscription, this);
+            for (String channel : channels) {
+                logger.info("unsubscribe {}", channel);
+                eventBus.unsubscribe(channel, this);
             }
+            channels.clear();
         }
 
-        public void subscribe(String subscription) {
-            logger.info("subscribe {}", subscription);
-            eventBus.subscribe(subscription, this);
+        public void subscribe(String channel) {
+            logger.info("subscribe {}", channel);
+            eventBus.subscribe(channel, this);
         }
 
         @Override
@@ -116,12 +129,12 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
 
             ChannelConsumer that = (ChannelConsumer) o;
 
-            return channel.equals(that.channel);
+            return wsChannel.equals(that.wsChannel);
         }
 
         @Override
         public int hashCode() {
-            return channel.hashCode();
+            return wsChannel.hashCode();
         }
     }
 }

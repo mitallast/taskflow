@@ -28,10 +28,15 @@ public class EventBus<T> {
     public void unsubscribe(String channel, BiConsumer<String, T> consumer) {
         Preconditions.checkNotNull(channel);
         Preconditions.checkNotNull(consumer);
-        CopyOnWriteArraySet<BiConsumer<String, T>> consumers = subscribersMap.get(channel);
-        if (consumers != null) {
+
+        subscribersMap.computeIfPresent(channel, (s, consumers) -> {
             consumers.remove(consumer);
-        }
+            if (consumers.isEmpty()) {
+                return null;
+            } else {
+                return consumers;
+            }
+        });
     }
 
     public void remove(String channel) {
