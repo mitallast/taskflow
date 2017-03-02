@@ -148,7 +148,7 @@ public class DefaultDagRunExecutor extends AbstractLifecycleComponent implements
 
         } else if (cmd instanceof RetryTaskRunCommand) {
             logger.warn("retry task run: {}", taskRun.id());
-            persistenceService.retry(dagRun, taskRun);
+            dagService.retry(dagRun, taskRun);
             schedule(dagRun.id());
 
         } else if (cmd instanceof CancelTaskRunCommand && taskRun.status() == TaskRunStatus.PENDING) {
