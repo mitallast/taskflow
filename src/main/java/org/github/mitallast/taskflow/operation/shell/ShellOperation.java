@@ -4,10 +4,7 @@ import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigList;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
-import org.github.mitallast.taskflow.operation.Operation;
-import org.github.mitallast.taskflow.operation.OperationCommand;
-import org.github.mitallast.taskflow.operation.OperationResult;
-import org.github.mitallast.taskflow.operation.OperationStatus;
+import org.github.mitallast.taskflow.operation.*;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -39,7 +36,7 @@ public class ShellOperation extends AbstractComponent implements Operation {
     }
 
     @Override
-    public OperationResult run(OperationCommand command) throws IOException, InterruptedException {
+    public OperationResult run(OperationCommand command, OperationContext context) throws IOException, InterruptedException {
 
         Config config = command.config().withFallback(reference());
 
@@ -65,7 +62,7 @@ public class ShellOperation extends AbstractComponent implements Operation {
 
         try {
             final Process process = builder.start();
-            final CompletableFuture<String> output = readStream(process.getInputStream());
+            final CompletableFuture<String> output = readStream(process.getInputStream(), context);
 
             boolean exited = false;
             InterruptedException interruptedException = null;
@@ -102,21 +99,23 @@ public class ShellOperation extends AbstractComponent implements Operation {
         }
     }
 
-    private CompletableFuture<String> readStream(InputStream inputStream) {
+    private CompletableFuture<String> readStream(InputStream inputStream, OperationContext context) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 StringBuilder output = new StringBuilder();
                 new BufferedReader(new InputStreamReader(inputStream))
                     .lines()
-                    .forEach(line -> {
-                        logger.info(line);
-                        output.append(line).append('\n');
+                    .forEach(string -> {
+                        logger.info(string);
+                        String line = string + '\n';
+                        output.append(line);
+                        context.outputListener().accept(line);
                     });
                 return output.toString();
             } catch (Exception e) {
                 logger.warn("unexpected exception", e);
                 return "";
             }
-        });
+        }, context.executionContext());
     }
 }

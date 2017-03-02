@@ -4,7 +4,6 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigList;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Represents abstract operation, can be included as Task into Dag.
@@ -19,5 +18,5 @@ public interface Operation {
 
     ConfigList schema();
 
-    OperationResult run(OperationCommand command) throws IOException, InterruptedException;
+    OperationResult run(OperationCommand command, OperationContext context) throws IOException, InterruptedException;
 }

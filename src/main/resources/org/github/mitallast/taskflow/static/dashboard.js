@@ -290,17 +290,32 @@
         $scope.cancelDagRun = function(){
             $http.post('/api/dag/run/id/' + $scope.id + '/cancel');
         };
+        $scope.isVisible = {}
         $scope.toggleOutput = function(run){
-            if(run._show){
-                run._show = false;
-            }else{
-                run._show = true;
-            }
+            $scope.showOutput(!$scope.isVisible[run.id]);
+        };
+        $scope.showOutput = function(run, show){
+            $scope.isVisible[run.id] = show;
         };
         $scope.updateDagRun = function(dag_run){
             $scope.dag_run = dag_run;
             $scope.cancelable = dag_run.status == "PENDING" || dag_run.status == "RUNNING";
-        }
+        };
+        $scope.updateTaskRunOutput = function(id, line){
+            console.log("updateTaskRunOutput", id, line)
+            $scope.dag_run.tasks
+            .filter(function(run) { return run.id == id; })
+            .forEach(function(run) {
+                $scope.showOutput(run, true);
+                if(!run.operationResult){
+                    run.operationResult = {};
+                }
+                if(!run.operationResult.output){
+                    run.operationResult.output = "";
+                }
+                run.operationResult.output += line;
+            })
+        };
         $scope.load = function(){
             $http.get('/api/dag/run/id/' + $scope.id)
             .then(function(response){
@@ -312,9 +327,12 @@
         };
         $scope.onUpdate = function($event){
             console.log($event);
-            switch($event.type){
+            switch($event.type) {
                 case "DagRunUpdated":
                     $scope.updateDagRun($event.dagRun);
+                    break;
+                case "TaskRunNewOutputLine":
+                    $scope.updateTaskRunOutput($event.taskRunId, $event.line);
                     break;
             }
         };

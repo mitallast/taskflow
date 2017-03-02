@@ -9,10 +9,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigList;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.docker.DockerService;
-import org.github.mitallast.taskflow.operation.Operation;
-import org.github.mitallast.taskflow.operation.OperationCommand;
-import org.github.mitallast.taskflow.operation.OperationResult;
-import org.github.mitallast.taskflow.operation.OperationStatus;
+import org.github.mitallast.taskflow.operation.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -42,7 +39,7 @@ public class DockerContainerStart extends AbstractComponent implements Operation
     }
 
     @Override
-    public OperationResult run(OperationCommand command) throws IOException, InterruptedException {
+    public OperationResult run(OperationCommand command, OperationContext context) throws IOException, InterruptedException {
         DockerClient docker = dockerService.docker();
         Config config = command.config().withFallback(reference());
 

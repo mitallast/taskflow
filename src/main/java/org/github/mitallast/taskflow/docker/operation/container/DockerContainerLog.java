@@ -11,10 +11,7 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigList;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.docker.DockerService;
-import org.github.mitallast.taskflow.operation.Operation;
-import org.github.mitallast.taskflow.operation.OperationCommand;
-import org.github.mitallast.taskflow.operation.OperationResult;
-import org.github.mitallast.taskflow.operation.OperationStatus;
+import org.github.mitallast.taskflow.operation.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,7 +42,7 @@ public class DockerContainerLog extends AbstractComponent implements Operation {
     }
 
     @Override
-    public OperationResult run(OperationCommand command) throws IOException, InterruptedException {
+    public OperationResult run(OperationCommand command, OperationContext context) throws IOException, InterruptedException {
         DockerClient docker = dockerService.docker();
         Config config = command.config().withFallback(reference());
 
@@ -60,7 +57,7 @@ public class DockerContainerLog extends AbstractComponent implements Operation {
 
         StringBuilder output = new StringBuilder();
         for (Container container : containers) {
-            LogContainerCallback loggingCallback = new LogContainerCallback();
+            LogContainerCallback loggingCallback = new LogContainerCallback(context);
 
             try {
                 long left = System.currentTimeMillis() - start;
@@ -94,11 +91,19 @@ public class DockerContainerLog extends AbstractComponent implements Operation {
 
     public class LogContainerCallback extends ResultCallbackTemplate<LogContainerResultCallback, Frame> {
 
-        private StringBuilder builder = new StringBuilder();
+        private final OperationContext context;
+        private final StringBuilder builder;
+
+        public LogContainerCallback(OperationContext context) {
+            this.context = context;
+            this.builder = new StringBuilder();
+        }
 
         @Override
         public void onNext(Frame item) {
-            builder.append(item.toString()).append('\n');
+            String line = item.toString() + '\n';
+            builder.append(line);
+            context.outputListener().accept(line);
         }
     }
 }

@@ -2,15 +2,15 @@ package org.github.mitallast.taskflow.executor;
 
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
+import org.github.mitallast.taskflow.common.EventBus;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.dag.DagRun;
 import org.github.mitallast.taskflow.dag.DagService;
 import org.github.mitallast.taskflow.dag.Task;
 import org.github.mitallast.taskflow.dag.TaskRun;
-import org.github.mitallast.taskflow.operation.Operation;
-import org.github.mitallast.taskflow.operation.OperationResult;
-import org.github.mitallast.taskflow.operation.OperationService;
-import org.github.mitallast.taskflow.operation.OperationStatus;
+import org.github.mitallast.taskflow.executor.event.DagRunEvent;
+import org.github.mitallast.taskflow.executor.event.TaskRunNewOutputLine;
+import org.github.mitallast.taskflow.operation.*;
 
 import java.util.concurrent.*;
 
@@ -19,16 +19,24 @@ public class DefaultTaskRunExecutor extends AbstractComponent implements TaskRun
     private final DagService dagService;
     private final DagRunExecutor dagRunExecutor;
     private final OperationService operationService;
+    private final EventBus<DagRunEvent> eventBus;
     private final ExecutorService executorService;
 
     private final ConcurrentMap<TaskRun, Future<?>> futures;
 
     @Inject
-    public DefaultTaskRunExecutor(Config config, DagService dagService, DagRunExecutor dagRunExecutor, OperationService operationService) {
+    public DefaultTaskRunExecutor(
+        Config config,
+        DagService dagService,
+        DagRunExecutor dagRunExecutor,
+        OperationService operationService,
+        EventBus<DagRunEvent> eventBus
+    ) {
         super(config, DefaultTaskRunExecutor.class);
         this.dagService = dagService;
         this.dagRunExecutor = dagRunExecutor;
         this.operationService = operationService;
+        this.eventBus = eventBus;
         this.executorService = Executors.newCachedThreadPool();
         futures = new ConcurrentHashMap<>();
     }
@@ -64,7 +72,12 @@ public class DefaultTaskRunExecutor extends AbstractComponent implements TaskRun
                 return;
             }
 
-            OperationResult operationResult = operation.run(task.command());
+            OperationContext context = new OperationContext(
+                executorService,
+                line -> eventBus.trigger("dag/run/" + dagRun.id(), new TaskRunNewOutputLine(taskRun.id(), line))
+            );
+            OperationResult operationResult = operation.run(task.command(), context);
+
             logger.info("status: {}", operationResult.status());
             switch (operationResult.status()) {
                 case SUCCESS:
