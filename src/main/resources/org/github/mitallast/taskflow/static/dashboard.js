@@ -72,7 +72,6 @@
             console.log("ws event", message);
             var consumers = subscriptions[message.channel];
             if(consumers){
-                console.log("consumers", consumers);
                 consumers.forEach(function(subscriber){
                     subscriber(message.event);
                 });
@@ -301,10 +300,15 @@
             $scope.dag_run = dag_run;
             $scope.cancelable = dag_run.status == "PENDING" || dag_run.status == "RUNNING";
         };
-        $scope.updateTaskRunOutput = function(id, line){
-            console.log("updateTaskRunOutput", id, line)
+        $scope.updateDagRunStatus = function(event){
+            $scope.dag_run.status = event.status;
+            $scope.dag_run.startDate = event.startDate;
+            $scope.dag_run.finishDate = event.finishDate;
+            $scope.cancelable = event.status == "PENDING" || event.status == "RUNNING";
+        };
+        $scope.updateTaskRunOutput = function(event){
             $scope.dag_run.tasks
-            .filter(function(run) { return run.id == id; })
+            .filter(function(run) { return run.id == event.taskRunId; })
             .forEach(function(run) {
                 $scope.showOutput(run, true);
                 if(!run.operationResult){
@@ -313,8 +317,24 @@
                 if(!run.operationResult.output){
                     run.operationResult.output = "";
                 }
-                run.operationResult.output += line;
-            })
+                run.operationResult.output += event.line;
+            });
+        };
+        $scope.updateTaskRunStatus = function(event){
+            $scope.dag_run.tasks
+            .filter(function(run) { return run.id == event.taskRunId; })
+            .forEach(function(run) {
+                if(!run.operationResult){
+                    run.operationResult = {};
+                }
+                if(!run.operationResult.output){
+                    run.operationResult.output = "";
+                }
+                run.startDate = event.startDate;
+                run.finishDate = event.finishDate;
+                run.status = event.status;
+                run.operationResult.status = event.operationStatus;
+            });
         };
         $scope.load = function(){
             $http.get('/api/dag/run/id/' + $scope.id)
@@ -325,14 +345,19 @@
                 }
             });
         };
-        $scope.onUpdate = function($event){
-            console.log($event);
-            switch($event.type) {
+        $scope.onUpdate = function(event){
+            switch(event.type) {
                 case "DagRunUpdated":
-                    $scope.updateDagRun($event.dagRun);
+                    $scope.updateDagRun(event.dagRun);
+                    break;
+                case "DagRunStatusUpdated":
+                    $scope.updateDagRunStatus(event);
                     break;
                 case "TaskRunNewOutputLine":
-                    $scope.updateTaskRunOutput($event.taskRunId, $event.line);
+                    $scope.updateTaskRunOutput(event);
+                    break;
+                case "TaskRunStatusUpdated":
+                    $scope.updateTaskRunStatus(event);
                     break;
             }
         };
@@ -347,7 +372,6 @@
             schedule.edit = true;
         };
         $scope.update = function(schedule){
-            console.log(schedule);
             $http.put('/api/dag/schedule', {
                 token: schedule.token,
                 enabled: schedule.enabled,
@@ -364,14 +388,12 @@
             )
         };
         $scope.enableSchedule = function(schedule){
-            console.log('enableSchedule', schedule)
             $http.put('/api/dag/token/' + schedule.token + '/schedule/enable')
             .then(function(){
                 $scope.load();
             })
         };
         $scope.disableSchedule = function(schedule){
-            console.log('disableSchedule', schedule)
             $http.put('/api/dag/token/' + schedule.token + '/schedule/disable')
             .then(function(){
                 $scope.load();
@@ -416,8 +438,6 @@
                     var gap = barHeight + padding;
                     var bottomPadding = 14;
 
-                    console.log(element[0])
-                    console.log(element[0].offsetWidth)
                     var w = element[0].offsetWidth;
                     var h = gap * tasks.length + padding * 2 + bottomPadding
 

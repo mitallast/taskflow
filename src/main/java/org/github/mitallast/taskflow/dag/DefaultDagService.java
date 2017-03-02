@@ -13,7 +13,9 @@ import org.github.mitallast.taskflow.common.error.MaybeErrors;
 import org.github.mitallast.taskflow.common.json.JsonService;
 import org.github.mitallast.taskflow.executor.DagRunExecutor;
 import org.github.mitallast.taskflow.executor.event.DagRunEvent;
+import org.github.mitallast.taskflow.executor.event.DagRunStatusUpdated;
 import org.github.mitallast.taskflow.executor.event.DagRunUpdated;
+import org.github.mitallast.taskflow.executor.event.TaskRunStatusUpdated;
 import org.github.mitallast.taskflow.operation.OperationResult;
 import org.github.mitallast.taskflow.operation.OperationService;
 import org.jgrapht.experimental.dag.DirectedAcyclicGraph;
@@ -147,7 +149,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     public boolean startDagRun(DagRun dagRun) {
         Preconditions.checkNotNull(dagRun);
         if (dagRunPersistence.startDagRun(dagRun.id())) {
-            trigger(dagRun);
+            triggerStatusUpdated(dagRun);
             return true;
         } else {
             return false;
@@ -158,7 +160,8 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     public boolean markDagRunSuccess(DagRun dagRun) {
         Preconditions.checkNotNull(dagRun);
         if (dagRunPersistence.markDagRunSuccess(dagRun.id())) {
-            triggerAndRemove(dagRun);
+            triggerStatusUpdated(dagRun);
+            triggerRemove(dagRun);
             notificationService.sendDagSuccess(dagRun);
             return true;
         } else {
@@ -170,7 +173,8 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     public boolean markDagRunFailed(DagRun dagRun) {
         Preconditions.checkNotNull(dagRun);
         if (dagRunPersistence.markDagRunFailed(dagRun.id())) {
-            triggerAndRemove(dagRun);
+            triggerStatusUpdated(dagRun);
+            triggerRemove(dagRun);
             notificationService.sendDagFailed(dagRun);
             return true;
         } else {
@@ -182,7 +186,8 @@ public class DefaultDagService extends AbstractComponent implements DagService {
     public boolean markDagRunCanceled(DagRun dagRun) {
         Preconditions.checkNotNull(dagRun);
         if (dagRunPersistence.markDagRunCanceled(dagRun.id())) {
-            triggerAndRemove(dagRun);
+            triggerStatusUpdated(dagRun);
+            triggerRemove(dagRun);
             notificationService.sendDagCanceled(dagRun);
             return true;
         } else {
@@ -204,7 +209,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
         try {
             return dagRunPersistence.startTaskRun(taskRun.id());
         } finally {
-            trigger(dagRun);
+            triggerStatusUpdated(dagRun, taskRun);
         }
     }
 
@@ -213,7 +218,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
         try {
             return dagRunPersistence.markTaskRunSuccess(taskRun.id(), operationResult);
         } finally {
-            trigger(dagRun);
+            triggerStatusUpdated(dagRun, taskRun);
         }
     }
 
@@ -222,7 +227,7 @@ public class DefaultDagService extends AbstractComponent implements DagService {
         try {
             return dagRunPersistence.markTaskRunFailed(taskRun.id(), operationResult);
         } finally {
-            trigger(dagRun);
+            triggerStatusUpdated(dagRun, taskRun);
             notificationService.sendTaskFailed(dagRun, taskRun, operationResult);
         }
     }
@@ -232,26 +237,37 @@ public class DefaultDagService extends AbstractComponent implements DagService {
         try {
             return dagRunPersistence.markTaskRunCanceled(taskRun.id());
         } finally {
-            trigger(dagRun);
+            triggerStatusUpdated(dagRun, taskRun);
         }
     }
 
-    private void triggerAndRemove(DagRun dagRun) {
-        String channel = channel(dagRun);
-        logger.info("trigger remove {} {}", channel, dagRun.id());
+    private void triggerRemove(DagRun dagRun) {
+        eventBus.remove(channel(dagRun));
+    }
+
+    private void trigger(DagRun dagRun) {
         try {
-            eventBus.trigger(channel, new DagRunUpdated(dagRun));
-            eventBus.remove(channel);
+            DagRun updated = dagRunPersistence.findDagRun(dagRun.id()).orElseThrow(IllegalArgumentException::new);
+            eventBus.trigger(channel(dagRun), new DagRunUpdated(updated));
         } catch (Throwable e) {
             logger.warn(e);
         }
     }
 
-    private void trigger(DagRun dagRun) {
-        String channel = channel(dagRun);
-        logger.info("trigger {} {}", channel, dagRun.id());
+    private void triggerStatusUpdated(DagRun dagRun) {
         try {
-            eventBus.trigger(channel, new DagRunUpdated(dagRun));
+            DagRun updated = dagRunPersistence.findDagRun(dagRun.id()).orElseThrow(IllegalArgumentException::new);
+            eventBus.trigger(channel(dagRun), new DagRunStatusUpdated(updated));
+        } catch (Throwable e) {
+            logger.warn(e);
+        }
+    }
+
+    private void triggerStatusUpdated(DagRun dagRun, TaskRun taskRun) {
+        try {
+            DagRun updated = dagRunPersistence.findDagRun(dagRun.id()).orElseThrow(IllegalArgumentException::new);
+            TaskRun updatedTask = updated.tasks().stream().filter(t -> t.id() == taskRun.id()).findFirst().orElseThrow(IllegalArgumentException::new);
+            eventBus.trigger(channel(dagRun), new TaskRunStatusUpdated(updatedTask));
         } catch (Throwable e) {
             logger.warn(e);
         }
