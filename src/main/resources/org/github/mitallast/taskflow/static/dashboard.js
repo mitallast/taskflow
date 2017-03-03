@@ -289,9 +289,13 @@
         $scope.cancelDagRun = function(){
             $http.post('/api/dag/run/id/' + $scope.id + '/cancel');
         };
-        $scope.isVisible = {}
+        $scope.isVisible = {};
         $scope.toggleOutput = function(run){
-            $scope.showOutput(!$scope.isVisible[run.id]);
+            if($scope.isVisible[run.id]){
+                $scope.showOutput(run, false);
+            }else{
+                $scope.showOutput(run, true);
+            }
         };
         $scope.showOutput = function(run, show){
             $scope.isVisible[run.id] = show;
@@ -424,7 +428,7 @@
                     if(scope.dag_run){
                         scope.render(scope.dag_run);
                     }
-                });
+                }, true);
                 scope.render = function(dag_run){
                     element[0].innerHTML = '';
                     var tasks = dag_run.tasks.filter(function(d){ return d.startDate; })
@@ -468,7 +472,7 @@
                         .interpolate(d3.interpolateHcl);
 
                     makeGrid();
-                    drawRects(tasks);
+                    drawTasks(tasks);
 
                     function parseFinishDate(date){
                         if(date){
@@ -479,36 +483,7 @@
                     }
 
                     function makeGrid(){
-                        var sec = 1000;
-                        var minute = sec * 60;
-                        var hour = minute * 60;
-                        var day = hour * 24;
-                        var week = day * 7;
-                        var month = week * 4;
-                        var year = month * 4;
-
-                        var tickMap = [
-                            { duration: year,        ticks: d3.timeMonth.every(2) },
-                            { duration: month,       ticks: d3.timeWeek.every(1) },
-                            { duration: week,        ticks: d3.timeDay.every(1) },
-                            { duration: day,         ticks: d3.timeHour.every(4) },
-                            { duration: hour * 12,   ticks: d3.timeHour.every(1) },
-                            { duration: hour,        ticks: d3.timeMinute.every(10) },
-                            { duration: minute * 30, ticks: d3.timeMinute.every(5) },
-                            { duration: minute * 10, ticks: d3.timeMinute.every(1) },
-                            { duration: minute,      ticks: d3.timeSecond.every(10) },
-                            { duration: sec * 30,    ticks: d3.timeSecond.every(5) },
-                            { duration: 0,           ticks: d3.timeSecond.every(1) },
-                        ];
-
-                        var ticks = tickMap.filter(function(t){ return t.duration < duration; })[0]
-                        ticks = ticks.ticks;
-
-                        var xAxis = d3.axisBottom(timeScale)
-                            .ticks(ticks)
-                            .tickSize(-h+padding, 0, 0)
-                            .tickFormat(d3.timeFormat("%X"));
-
+                        var xAxis = d3.axisBottom(timeScale).tickSize(-h+padding, 0, 0)
                         var grid = svg.append('g')
                             .attr('class', 'grid')
                             .attr('transform', 'translate(0 , ' + (h - bottomPadding) + ')')
@@ -521,7 +496,7 @@
                                 .attr("dy", "1em");
                     }
 
-                    function drawRects(tasks){
+                    function drawTasks(tasks){
 
                         var rectangles = svg.append('g')
                             .selectAll("rect")
