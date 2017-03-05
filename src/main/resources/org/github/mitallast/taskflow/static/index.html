@@ -125,6 +125,8 @@
             </tbody>
         </table>
     </div>
+
+    <div dag-visualize></div>
 </script>
 <script type="text/ng-template" id="/dag-create.html">
     <h2 class="page-header">Create DAG</h2>
@@ -337,7 +339,7 @@
 
     <p>tasks:{{dag_run.tasks.length}}</p>
 
-    <div class="gantt" diagram-gantt="dag_run"></div>
+    <div diagram-gantt></div>
 
     <div class="panel panel-default" ng-repeat="run in dag_run.tasks">
         <div class="panel-body">

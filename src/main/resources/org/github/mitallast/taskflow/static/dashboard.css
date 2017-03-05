@@ -84,10 +84,6 @@ body {
   stroke-width: 0.5px
 }
 
-.grid domain {
-
-}
-
 @media
 (-webkit-min-device-pixel-ratio: 2),
 (min-resolution: 192dpi) {

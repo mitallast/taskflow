@@ -418,6 +418,170 @@
             $scope.operations = response.data;
         });
     })
+    .directive('dagVisualize', function(){
+        return {
+            restrict: 'A',
+            scope: true,
+            transclude: true,
+            link: function(scope, element, attrs){
+                scope.$watch('dag', function(){
+                    if(scope.dag){
+                        scope.render(scope.dag);
+                    }
+                }, true);
+                scope.render = function(dag){
+                    element[0].innerHTML = '';
+
+                    var levels = [];  // level => [task]
+                    var visited = {}; // token => {level:, index:}
+                    var tasks = dag.tasks;
+                    var maxLevelSize = 0;
+                    while(tasks.length > 0){
+                        var level = tasks
+                            .filter(function(task){
+                                return task.depends
+                                    .filter(function(token){
+                                        return !visited[token];
+                                    })
+                                    .length == 0;
+                            });
+                        if(level.length == 0){
+                            console.log("error: empty layer");
+                            break;
+                        }
+                        console.log("level ", level);
+                        level.forEach(function(task, index){
+                            visited[task.token] = {
+                                level: levels.length,
+                                index: index
+                            };
+                        });
+                        levels.push(level);
+                        maxLevelSize = Math.max(maxLevelSize, level.length);
+                        tasks = tasks.filter(function(task){return !visited[task.token];});
+                    }
+                    var edges = []; // {source:, target:,}
+                    dag.tasks.forEach(function(task){
+                        task.depends.forEach(function(depend){
+                            edges.push({source:depend, target:task.token});
+                        });
+                    });
+
+                    var barW = 100;
+                    var barH = 20;
+                    var paddingV = 50;
+                    var paddingH = 50;
+
+                    var w = (barW + paddingH) * maxLevelSize + paddingH;
+                    var h = (barH + paddingV) * levels.length + paddingV;
+
+                    var svg = d3.select(element[0])
+                        .append("svg")
+                        .attr("width", w)
+                        .attr("height", h)
+                        .attr("class", "svg");
+
+                    renderBlocks();
+                    renderEdges();
+
+                    function levelPadding(level){
+                        var l = levels[level].length;
+                        var p = (w - (l * barW)) / (l + 1);
+                        console.log('level padding: ', p);
+                        return p;
+                    };
+                    function rectX(token){
+                        var padding = levelPadding(visited[token].level);
+                        return visited[token].index * (padding + barW) + padding;
+                    }
+                    function rectY(token){
+                        return visited[token].level * (paddingV + barH);
+                    }
+                    function lineX(token) { return rectX(token) + barW / 2; }
+                    function renderBlocks(){
+                        var colorScale = d3.scaleLinear()
+                            .domain([0, dag.tasks.length])
+                            .range(["#00B9FA", "#F95002"])
+                            .interpolate(d3.interpolateHcl);
+
+                        var rectangles = svg
+                            .selectAll('rect')
+                            .data(dag.tasks)
+                            .enter();
+
+                        rectangles.append('rect')
+                            .attr('rx', 3)
+                            .attr('ry', 3)
+                            .attr('x', function(task){
+                                return rectX(task.token);
+                            })
+                            .attr('y', function(task){
+                                return rectY(task.token);
+                            })
+                            .attr('width', barW)
+                            .attr('height', barH)
+                            .attr('stroke', 'none')
+                            .attr("fill", function(task, index){
+                                return colorScale(index);
+                            })
+
+                        rectangles.append('text')
+                            .text(function(task){return task.token;})
+                            .attr('x', function(task){
+                                return rectX(task.token) + barW / 2;
+                            })
+                            .attr('y', function(task){
+                                return rectY(task.token) + barH / 2 + 4;
+                            })
+                            .attr("font-size", 11)
+                            .attr("text-anchor", "middle")
+                            .attr("text-height", barH)
+                            .attr("fill", "#fff");
+                    }
+                    function renderEdges() {
+                        var markerWidth = 5;
+
+                        svg.append("defs")
+                            .append("marker")
+                            .attr("id", "arrowhead")
+                            .attr("refX", 0)
+                            .attr("refY", 5)
+                            .attr("markerWidth", markerWidth)
+                            .attr("markerHeight", 10)
+                            .attr('markerUnits', 'strokeWidth')
+                            .attr("orient", "auto")
+                            .attr("viewBox", '0 0 10 10')
+                            .attr("markerUnits", "strokeWidth")
+                            .append("path")
+                            .attr("d", "M 0 0 L 10 5 L 0 10 z")
+                            .attr('fill', '#666');
+
+                        var line = d3.line()
+                            .curve(d3.curveBasis)
+
+                        svg.selectAll('line')
+                            .data(edges)
+                            .enter()
+                            .append('path')
+                            .attr('d', function(edge){
+                                var sourceY = rectY(edge.source);
+                                var targetY = rectY(edge.target);
+                                var edgeBox = (targetY - sourceY - barH) / 2;
+                                return line([
+                                    [rectX(edge.source) + barW / 2,     sourceY + barH],
+                                    [rectX(edge.source) + barW / 2,     sourceY + barH + edgeBox],
+                                    [rectX(edge.target) + barW / 2,     targetY - edgeBox],
+                                    [rectX(edge.target) + barW / 2,     targetY - markerWidth]
+                                ]);
+                            })
+                            .attr('marker-end','url(#arrowhead)')
+                            .style("stroke","#666")
+                            .style("fill", "none")
+                    }
+                };
+            }
+        };
+    })
     .directive('diagramGantt', function(){
         return {
             restrict: 'A',
@@ -436,10 +600,10 @@
                         return;
                     }
 
-                    var barHeight = 20;
+                    var barH = 20;
                     var padding = 4;
                     var sidePadding = 20;
-                    var gap = barHeight + padding;
+                    var gap = barH + padding;
                     var bottomPadding = 14;
 
                     var w = element[0].offsetWidth;
@@ -511,7 +675,7 @@
                             })
                             .attr("y", function(d, i){ return i*gap + padding; })
                             .attr("width", function(d){ return (timeScale(parseFinishDate(d.finishDate))-timeScale(new Date(d.startDate))); })
-                            .attr("height", barHeight)
+                            .attr("height", barH)
                             .attr("stroke", "none")
                             .attr("fill", function(d){
                                 for (var i = 0; i < categories.length; i++){
@@ -529,11 +693,11 @@
                                 return (timeScale(parseFinishDate(d.finishDate))-timeScale(new Date(d.startDate)))/2 + timeScale(new Date(d.startDate));
                             })
                             .attr("y", function(d, i){
-                                return i*gap + padding + barHeight / 2 + 4;
+                                return i*gap + padding + barH / 2 + 4;
                             })
                             .attr("font-size", 11)
                             .attr("text-anchor", "middle")
-                            .attr("text-height", barHeight)
+                            .attr("text-height", barH)
                             .attr("fill", "#fff");
                     }
                 };
