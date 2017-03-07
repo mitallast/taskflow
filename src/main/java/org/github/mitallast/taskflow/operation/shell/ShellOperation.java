@@ -3,10 +3,14 @@ package org.github.mitallast.taskflow.operation.shell;
 import com.google.inject.Inject;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigList;
+import org.github.mitallast.taskflow.common.IOUtils;
 import org.github.mitallast.taskflow.common.component.AbstractComponent;
 import org.github.mitallast.taskflow.operation.*;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -40,27 +44,27 @@ public class ShellOperation extends AbstractComponent implements Operation {
 
         Config config = command.config().withFallback(reference());
 
-        String charset = config.getString("charset");
-        logger.info("charset: {}", charset);
-
         String path = config.getString("directory");
         File directory = new File(path).getAbsoluteFile();
         logger.info("directory: {}", directory);
 
-        List<String> cmd = new ArrayList<>();
-        cmd.add(config.getString("command"));
-        cmd.addAll(config.getStringList("args"));
-
-        logger.info("cmd {}", cmd.stream().reduce((s, s2) -> s + " " + s2));
+        String script = config.getString("script");
 
         long timeout = config.getDuration("timeout", TimeUnit.MILLISECONDS);
 
-        ProcessBuilder builder = new ProcessBuilder(cmd);
-        builder.redirectErrorStream(true);
-        builder.environment().putAll(command.environment().map());
-        builder.directory(directory);
-
+        File scriptFile = null;
         try {
+            scriptFile = File.createTempFile("taskflow", ".sh");
+            IOUtils.write(scriptFile, script);
+            if (!scriptFile.setExecutable(true)) {
+                logger.warn("error set executable {}", scriptFile);
+            }
+
+            ProcessBuilder builder = new ProcessBuilder(scriptFile.getAbsolutePath());
+            builder.redirectErrorStream(true);
+            builder.environment().putAll(command.environment().map());
+            builder.directory(directory);
+
             final Process process = builder.start();
             final CompletableFuture<String> output = readStream(process.getInputStream(), context);
 
@@ -96,6 +100,10 @@ public class ShellOperation extends AbstractComponent implements Operation {
                 OperationStatus.FAILED,
                 e.getMessage()
             );
+        } finally {
+            if (scriptFile != null) {
+                Files.deleteIfExists(scriptFile.toPath());
+            }
         }
     }
 

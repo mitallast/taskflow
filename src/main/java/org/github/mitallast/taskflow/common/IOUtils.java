@@ -44,4 +44,13 @@ public class IOUtils {
         copy(input, sw);
         return sw.toString();
     }
+
+    public static void write(File file, String content) throws IOException {
+        try (
+            FileOutputStream output = new FileOutputStream(file);
+            OutputStreamWriter writer = new OutputStreamWriter(output)
+        ) {
+            writer.write(content);
+        }
+    }
 }

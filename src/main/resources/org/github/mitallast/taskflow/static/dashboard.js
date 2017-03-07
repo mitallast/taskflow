@@ -3,14 +3,20 @@
 
     angular.module('dag', ['ngRoute', 'ngWebSocket', 'ui.ace'])
     .run(function($rootScope){
-        $rootScope.aceJson = function(editor){
+        $rootScope.aceInit = function(editor){
             var session = editor.getSession();
             session.setTabSize(4);
             session.setUseSoftTabs(true);
-            session.setMode('ace/mode/json');
-
             editor.renderer.setShowGutter(true);
             editor.setShowPrintMargin(false);
+        }
+        $rootScope.aceJson = function(editor){
+            $rootScope.aceInit(editor);
+            editor.getSession().setMode('ace/mode/json');
+        };
+        $rootScope.aceShell = function(editor){
+            $rootScope.aceInit(editor);
+            editor.getSession().setMode('ace/mode/sh');
         };
     })
     .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider){
